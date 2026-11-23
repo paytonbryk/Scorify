@@ -117,7 +117,7 @@ async function loadDemoScore(path, name) {
   analysisSection.hidden = true
   analysisResult.textContent = ""
   scoreTitle.textContent = name
-  currentScore = { name, filename: null, scoreUrl: null }
+  currentScore = { name, filename: null, scoreUrl: null, demoPath: path }
   setStatus(viewerStatus, "Loading…")
 
   document.querySelectorAll(".demo-score").forEach(el => {
@@ -428,12 +428,26 @@ document.getElementById("playbackSpeed").addEventListener("change", e => {
 // ── ChordGNN analysis ─────────────────────────────────────────────────────
 document.getElementById("analyseBtn").addEventListener("click", async () => {
   if (!currentScore) return setStatus(viewerStatus, "Open a score first.", true)
-  const score = currentScore
+  let score = currentScore
   const version = scoreLoadVersion
   const button = document.getElementById("analyseBtn")
   button.disabled = true
   setStatus(viewerStatus, "Analysing harmony… (may take 1–5 min)")
   try {
+    // Demo scores have no filename — upload silently first to get one
+    if (!score.filename) {
+      const demoXml = await fetch(score.demoPath).then(r => r.blob())
+      const form = new FormData()
+      form.append("file", demoXml, score.name + ".xml")
+      const up = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: form
+      }).then(r => r.json())
+      if (up.error) throw new Error(up.error)
+      score = { ...score, filename: up.name }
+      currentScore = score
+    }
     const res = await apiFetch("/api/analyze", "POST", { filename: score.filename })
     if (version !== scoreLoadVersion) return
     if (res.error) throw new Error(res.error)
