@@ -392,7 +392,9 @@ function renderScore(composition) {
 
   const stave = new VF.Stave(10, 40, W - 20)
   const clef = clefChanges.find(c => c.staffNo === 1)
-  stave.addClef(clef ? clef.sign.toLowerCase() : "treble")
+  const clefMap = { g: 'treble', f: 'bass', c: 'alto', p: 'percussion' }
+  const clefName = clef ? (clefMap[clef.sign.toLowerCase()] || 'treble') : 'treble'
+  stave.addClef(clefName)
   const ts = timeSignatures[0]
   if (ts) stave.addTimeSignature(`${ts.topNo}/${ts.bottomNo}`)
   const ks = keySignatures[0]
