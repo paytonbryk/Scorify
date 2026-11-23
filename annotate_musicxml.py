@@ -5,6 +5,69 @@ import math
 import xml.etree.ElementTree as ET
 
 
+def normalize_analysis_divisions(source, destination):
+    """Use one integer ticks-per-quarter scale across all parts for AnalysisGNN.
+
+    Its graph builder compares the merged note array against one part's raw
+    measure ticks. Mixed divisions are valid MusicXML, but break that comparison.
+    This operates on an analysis-only copy, never the uploaded/exported score.
+    """
+    tree = ET.parse(source)
+    root = tree.getroot()
+    namespace = root.tag.split('}')[0][1:] if root.tag.startswith('{') else ''
+    tag = lambda name: f'{{{namespace}}}{name}' if namespace else name
+    if root.tag != tag('score-partwise'):
+        raise ValueError('Analysis requires partwise MusicXML.')
+    changes, values, division_nodes = [], [], []
+    for part in root.findall(tag('part')):
+        divisions = Fraction(1)
+        for measure in part.findall(tag('measure')):
+            for child in measure:
+                if child.tag == tag('attributes'):
+                    node = child.find(tag('divisions'))
+                    if node is not None:
+                        divisions = Fraction(node.text)
+                        if divisions <= 0:
+                            raise ValueError('MusicXML divisions must be positive.')
+                        values.append(divisions)
+                        division_nodes.append(node)
+                for node in child.iter():
+                    if node.tag in (tag('duration'), tag('offset')):
+                        changes.append((node, None, Fraction(node.text) / divisions))
+                    if node.tag == tag('note'):
+                        for attribute in ('attack', 'release'):
+                            if attribute in node.attrib:
+                                changes.append((node, attribute, Fraction(node.get(attribute)) / divisions))
+                    if node.tag == tag('grace') and 'make-time' in node.attrib:
+                        changes.append((node, 'make-time', Fraction(node.get('make-time')) / divisions))
+    target = 1
+    # Include all original scales and fractional durations to avoid rounding.
+    for factor in [value.numerator for value in values] + [value.denominator for _, _, value in changes]:
+        target = target * factor // math.gcd(target, factor)
+    for node in division_nodes:
+        node.text = str(target)
+    for node, attribute, quarters in changes:
+        ticks = quarters * target
+        if ticks.denominator != 1:
+            raise ValueError('Cannot normalize fractional MusicXML timing exactly.')
+        if attribute:
+            node.set(attribute, str(ticks.numerator))
+        else:
+            node.text = str(ticks.numerator)
+    # Explicitly establish the common scale even for parts without divisions.
+    for part in root.findall(tag('part')):
+        measure = part.find(tag('measure'))
+        if measure is None:
+            continue
+        attributes = ET.Element(tag('attributes'))
+        ET.SubElement(attributes, tag('divisions')).text = str(target)
+        measure.insert(0, attributes)
+    if namespace:
+        ET.register_namespace('', namespace)
+    tree.write(destination, encoding='utf-8', xml_declaration=True)
+    return target
+
+
 def annotate_musicxml(source, destination, events):
     """Events have measure_index, offset_quarter, romanNumeral and localkey.
 

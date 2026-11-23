@@ -9,10 +9,12 @@ Outputs:
 import argparse
 import os
 import sys
+import tempfile
 import torch
+import numpy as np
 import partitura as pt
 from bisect import bisect_right
-from annotate_musicxml import annotate_musicxml
+from annotate_musicxml import annotate_musicxml, normalize_analysis_divisions
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--score_path", required=True, help="Path to input MusicXML file")
@@ -60,7 +62,20 @@ except Exception as e:
 # --- load score ---
 print(f"Loading score: {args.score_path}", flush=True)
 try:
-    score = pt.load_score(args.score_path)
+    with tempfile.TemporaryDirectory(prefix="scorify-analysis-") as work:
+        normalized_path = os.path.join(work, "normalized.musicxml")
+        divisions = normalize_analysis_divisions(args.score_path, normalized_path)
+        score = pt.load_score(normalized_path)
+    print(f"Analysis timing normalized to {divisions} divisions per quarter note.", flush=True)
+    # Fail before inference with a useful diagnostic if a score has actual gaps.
+    note_array = score.note_array()
+    if not len(note_array):
+        raise ValueError("The score contains no pitched notes to analyse.")
+    covered = np.zeros(len(note_array), dtype=bool)
+    for measure in score[-1].measures:
+        covered |= (note_array["onset_div"] >= measure.start.t) & (note_array["onset_div"] < measure.end.t)
+    if not covered.all():
+        raise ValueError(f"{int((~covered).sum())} notes fall outside the analysis measure timeline after timing normalization.")
 except Exception as e:
     print(f"ERROR loading score: {e}", file=sys.stderr)
     sys.exit(1)

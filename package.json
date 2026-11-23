@@ -1,7 +1,7 @@
 {
   "name": "scorify",
   "version": "0.0.1",
-  "description": "MusicXML upload, VexFlow rendering, Tone.js playback, ChordGNN analysis.",
+  "description": "MusicXML upload, OpenSheetMusicDisplay rendering, Tone.js playback, ChordGNN analysis.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

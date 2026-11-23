@@ -1,4 +1,4 @@
-// Scorify — MusicXML upload, VexFlow rendering, Tone.js playback, ChordGNN analysis.
+// Scorify — MusicXML upload, OpenSheetMusicDisplay rendering, Tone.js playback, ChordGNN analysis.
 // Magic-link auth adapted from Project 2 (mue550-650-proj2-pb).
 const path = require("path")
 const fs = require("fs")

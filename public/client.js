@@ -1,6 +1,6 @@
 /* ============================================================
    Scorify – client.js
-   MusicXML → Composition object → VexFlow render + Tone.js playback
+   MusicXML → Composition object → OpenSheetMusicDisplay render + Tone.js playback
    + ChordGNN analysis via 2nd-server job queue
    ============================================================ */
 
@@ -653,77 +653,6 @@ function parseMusicXML(xmlText) {
   }
 }
 
-// ── VexFlow renderer ──────────────────────────────────────────────────────
-function renderScore(composition) {
-  const { notes, rests, timeSignatures, keySignatures, clefChanges } = composition
-
-  const W = scoreCanvas.parentElement.clientWidth || 860
-  scoreCanvas.width  = W
-  scoreCanvas.height = 300
-
-  const VF = Vex.Flow
-  const renderer = new VF.Renderer(scoreCanvas, VF.Renderer.Backends.CANVAS)
-  renderer.resize(W, 300)
-  const ctx = renderer.getContext()
-  ctx.clearRect(0, 0, W, 300)
-
-  const stave = new VF.Stave(10, 40, W - 20)
-  const clef = clefChanges.find(c => c.staffNo === 1)
-  const clefMap = { g: 'treble', f: 'bass', c: 'alto', p: 'percussion' }
-  const clefName = clef ? (clefMap[clef.sign.toLowerCase()] || 'treble') : 'treble'
-  stave.addClef(clefName)
-  const ts = timeSignatures[0]
-  if (ts) stave.addTimeSignature(`${ts.topNo}/${ts.bottomNo}`)
-  const ks = keySignatures[0]
-  if (ks) stave.addKeySignature(fifthsToKey(ks.fifths, ks.mode))
-  stave.setContext(ctx).draw()
-
-  // Gather staff 1 notes from first measure only
-  const beatsPerMeasure = ts ? (ts.topNo * (4 / ts.bottomNo)) : 4
-  const staff1 = [...notes.filter(n => n.staffNo === 1 && n.pitch),
-                   ...rests.filter(r => r.staffNo === 1)]
-    .sort((a, b) => a.ontime - b.ontime)
-    .filter(evt => evt.ontime < beatsPerMeasure)
-
-  // Build VexFlow notes — wrap each construction so one bad note can't crash all
-  const vfNotes = []
-  for (const evt of staff1) {
-    try {
-      const dur = durationTypeToVF(evt.durationType)
-      const dots = evt.dotCount || 0
-      const isRest = !evt.pitch
-      const key = isRest ? "b/4" : pitchToVFKey(evt.pitch)
-      const durStr = isRest ? dur + "r" : dur
-      const vfNote = new VF.StaveNote({ clef: "treble", keys: [key], duration: durStr })
-      for (let d = 0; d < dots; d++) {
-        if (vfNote.addDotToAll) vfNote.addDotToAll()
-      }
-      vfNotes.push(vfNote)
-    } catch (e) {
-      console.warn("Skipping note:", evt.durationType, evt.pitch || "rest", e.message)
-    }
-  }
-
-  if (!vfNotes.length) {
-    console.warn("VexFlow: no valid notes in first measure — drawing stave only")
-    return
-  }
-
-  try {
-    const numBeats = ts ? ts.topNo : 4
-    const beatValue = ts ? ts.bottomNo : 4
-    const voice = new VF.Voice({ num_beats: numBeats, beat_value: beatValue })
-      .setMode(VF.Voice.Mode.SOFT)
-    voice.addTickables(vfNotes)
-    new VF.Formatter().joinVoices([voice]).format([voice], W - 80)
-    voice.draw(ctx, stave)
-  } catch (e) {
-    console.error("VexFlow formatter error:", e.message)
-  }
-}
-
-// ── VexFlow helpers ───────────────────────────────────────────────────────
-
 // Transpose a pitch string like "C#4" by n semitones (positive = up)
 function transposePitch(pitch, semitones) {
   const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
@@ -741,26 +670,6 @@ function transposePitch(pitch, semitones) {
   while (newIdx < 0)  { newIdx += 12; oct-- }
   while (newIdx >= 12){ newIdx -= 12; oct++ }
   return notes[newIdx] + oct
-}
-
-function pitchToVFKey(pitch) {
-  // "C#4" → "c#/4", "Bb3" → "bb/3"
-  const m = pitch.match(/^([A-G])(#|b)?(\d+)$/)
-  if (!m) return "b/4"
-  return `${m[1].toLowerCase()}${m[2] || ""}/${m[3]}`
-}
-
-function durationTypeToVF(type) {
-  const map = { whole: "w", half: "h", quarter: "q", eighth: "8",
-    "16th": "16", "32nd": "32", "64th": "64" }
-  return map[type] || "q"
-}
-
-function fifthsToKey(fifths, mode) {
-  const major = ["C","G","D","A","E","B","F#","C#","Cb","Gb","Db","Ab","Eb","Bb","F"]
-  const minor = ["a","e","b","f#","c#","g#","d#","a#","ab","eb","bb","f","c","g","d"]
-  const idx = ((fifths % 15) + 15) % 15
-  return mode === "minor" ? minor[idx] : major[idx]
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────

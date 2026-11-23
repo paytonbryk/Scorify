@@ -14,6 +14,13 @@ on staff 1 of the first part. The browser renders that annotated score and expor
 the same MusicXML through **Export annotated MusicXML**. Original uploads are kept;
 older results with untimed `<harmony>` elements need to be regenerated.
 
+The same two Python files also normalize divisions across parts in a temporary
+analysis copy. This handles valid scores that use different tick resolutions per
+part, which otherwise fail AnalysisGNN's note-to-measure graph mapping. Pitches,
+musical durations, pickups, and measure numbers are preserved. Annotation export
+still modifies the original XML, not the normalized copy. The worker logs the
+common divisions value and checks measure coverage before inference.
+
 Local annotation checks (no model/checkpoint required):
 
 ```bash
