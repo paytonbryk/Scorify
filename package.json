@@ -1,0 +1,21 @@
+{
+  "name": "scorify",
+  "version": "0.0.1",
+  "description": "MusicXML upload, VexFlow rendering, Tone.js playback, ChordGNN analysis.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@fastify/multipart": "6.0.1",
+    "@fastify/static": "6.5.0",
+    "@fastify/view": "7.1.2",
+    "@fastify/formbody": "7.3.0",
+    "fastify": "3.21.1",
+    "handlebars": "4.7.7",
+    "nodemailer": "6.6.3",
+    "uuid": "8.3.2"
+  },
+  "engines": { "node": "14.x" },
+  "license": "AGPL-3.0-or-later"
+}

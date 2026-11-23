@@ -1,0 +1,76 @@
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: Georgia, serif;
+  margin: 0;
+  background: #faf9f7;
+  color: #1a1a1a;
+}
+header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 1.5rem 2rem;
+}
+header h1 { margin: 0; font-size: 2rem; letter-spacing: 0.05em; }
+.tagline { margin: 0.25rem 0 0; font-style: italic; opacity: 0.75; font-size: 0.95rem; }
+main { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+h2 { border-bottom: 2px solid #e0ddd8; padding-bottom: 0.3rem; }
+h3 { color: #444; }
+
+/* Auth */
+#authSection form { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-end; margin-top: 1rem; }
+#authSection label { font-size: 0.9rem; }
+#authSection input[type="email"] {
+  padding: 0.5rem 0.75rem; border: 1px solid #bbb; border-radius: 4px;
+  font-size: 1rem; width: 260px;
+}
+button {
+  padding: 0.5rem 1.1rem; border: none; border-radius: 4px; cursor: pointer;
+  font-size: 0.95rem; background: #1a1a2e; color: #fff;
+}
+button:hover { background: #2d2d4e; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Top bar */
+#topBar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+#userLabel { font-size: 0.9rem; color: #555; }
+#signOutBtn { background: #888; }
+
+/* Upload */
+#uploadSection { margin-bottom: 2rem; }
+#uploadSection input[type="file"] { margin-right: 0.6rem; }
+
+/* Score list */
+#scoreList { list-style: none; padding: 0; }
+#scoreList li {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid #eee; cursor: pointer;
+}
+#scoreList li:hover { background: #f0eeea; }
+#scoreList li.active { background: #e8f0fe; font-weight: bold; }
+.score-name { flex: 1; }
+
+/* Viewer */
+#viewerSection { margin-top: 1.5rem; }
+#controls { display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+#analyseBtn { background: #2e6a2e; }
+#analyseBtn:hover { background: #3d8c3d; }
+#scoreCanvas { border: 1px solid #ccc; display: block; width: 100%; background: #fff; }
+
+/* Analysis */
+#analysisSection { margin-top: 1.5rem; }
+#analysisResult {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: monospace;
+  font-size: 0.88rem;
+  white-space: pre-wrap;
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+/* Status messages */
+[role="status"] { font-size: 0.9rem; color: #555; min-height: 1.2em; margin-top: 0.5rem; }
+.error { color: #c0392b; }
+.success { color: #27ae60; }

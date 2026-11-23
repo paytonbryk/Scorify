@@ -1,0 +1,15 @@
+{
+  "name": "scorify-2nd-server",
+  "version": "0.0.1",
+  "description": "Polls Scorify UI server for jobs and runs ChordGNN analysis.",
+  "main": "poll_jobs.js",
+  "scripts": {
+    "start": "node poll_jobs.js"
+  },
+  "dependencies": {
+    "dotenv": "16.0.3",
+    "uuid": "8.3.2"
+  },
+  "engines": { "node": "14.x" },
+  "license": "AGPL-3.0-or-later"
+}
