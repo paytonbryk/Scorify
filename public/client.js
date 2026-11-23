@@ -164,11 +164,14 @@ async function playScore(fromBeat = null) {
   transport.timeSignature = 4
 
   sortedTempi.forEach(t => {
-    if (t.ontime > 0) {
-      const id = transport.schedule(time => {
-        transport.bpm.setValueAtTime(t.bpm, time)
-      }, `${Math.round(t.ontime * transport.PPQ)}i`)
-      scheduledEvents.push(id)
+    if (t.ontime > 0 && !isNaN(t.ontime) && !isNaN(t.bpm)) {
+      const tickVal = Math.round(t.ontime * transport.PPQ)
+      if (!isNaN(tickVal)) {
+        const id = transport.schedule(time => {
+          transport.bpm.setValueAtTime(t.bpm, time)
+        }, `${tickVal}i`)
+        scheduledEvents.push(id)
+      }
     }
   })
 
@@ -196,10 +199,15 @@ async function playScore(fromBeat = null) {
   // Schedule notes from playStartBeat onward
   notes.forEach(note => {
     if (!note.pitch || note.offtime <= playStartBeat) return
+    if (isNaN(note.ontime) || isNaN(note.offtime)) return
     const synth = synths.get(note.staffNo)
+    if (!synth) return
     const noteStart = Math.max(note.ontime, playStartBeat)
-    const onTick  = `${Math.round((noteStart - playStartBeat) * transport.PPQ)}i`
-    const durTick  = `${Math.round(Math.max(0.01, note.offtime - noteStart) * transport.PPQ)}i`
+    const onTickVal  = Math.round((noteStart - playStartBeat) * transport.PPQ)
+    const durTickVal = Math.round(Math.max(0.01, note.offtime - noteStart) * transport.PPQ)
+    if (isNaN(onTickVal) || isNaN(durTickVal)) return
+    const onTick  = `${onTickVal}i`
+    const durTick = `${durTickVal}i`
     const id = transport.schedule(time => {
       synth.triggerAttackRelease(note.pitch, durTick, time, 0.75)
     }, onTick)
