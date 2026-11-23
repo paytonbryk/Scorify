@@ -9,10 +9,11 @@ const fastify = require("fastify")({ logger: false })
 const nodemailer = require("nodemailer")
 
 const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000"
-const dataRoot = process.env.DATA_ROOT || path.join(__dirname, "data")
+const dataRoot = process.env.DATA_ROOT || (process.env.RENDER ? "/mount" : path.join(__dirname, "data"))
 const sessionsFile = path.join(dataRoot, "user_sessions.json")
 const jobsFile = path.join(dataRoot, "jobs.json")
 const sessionLength = 30 * 60 * 1000
+const JOBS_SIG = process.env.JOBS_SIG || "scorify-secret"
 
 fs.mkdirSync(dataRoot, { recursive: true })
 if (!fs.existsSync(sessionsFile)) fs.writeFileSync(sessionsFile, "{}")
@@ -158,7 +159,8 @@ fastify.get("/api/scores", async (req, rep) => {
 
 // Serve a MusicXML file.
 fastify.get("/api/score/:userId/:filename", async (req, rep) => {
-  if (!authenticateUser(req)) return rep.code(401).send({ error: "Please sign in." })
+  const isJobServer = req.headers["x-job-sig"] === JOBS_SIG
+  if (!isJobServer && !authenticateUser(req)) return rep.code(401).send({ error: "Please sign in." })
   const { userId, filename } = req.params
   if (!/^[0-9a-f-]{36}$/.test(userId) ||
       !/^[0-9a-f-]{36}\.(xml|musicxml)$/.test(filename))
@@ -170,10 +172,24 @@ fastify.get("/api/score/:userId/:filename", async (req, rep) => {
   return rep.send(fs.createReadStream(filepath))
 })
 
+// ── Delete a score ─────────────────────────────────────────────────────────
+fastify.delete("/api/score/:filename", async (req, rep) => {
+  const user = authenticateUser(req)
+  if (!user) return rep.code(401).send({ error: "Please sign in." })
+  const { filename } = req.params
+  if (!/^[0-9a-f-]{36}\.(xml|musicxml)$/.test(filename))
+    return rep.code(400).send({ error: "Invalid filename." })
+  const filepath = path.join(accountFolder(user.uuid), "uploads", filename)
+  if (!fs.existsSync(filepath)) return rep.code(404).send({ error: "Not found." })
+  await fs.promises.unlink(filepath)
+  const account = readAccount(user.uuid)
+  account.uploads = account.uploads.filter(f => f.filename !== filename)
+  saveAccount(account)
+  return { success: true }
+})
+
 // ── Job queue (UI-side) ──────────────────────────────────────────────────────
 // The 2nd server polls /api/jobs and pings /api/jobComplete when done.
-
-const JOBS_SIG = process.env.JOBS_SIG || "scorify-secret"
 
 // 2nd server polls this to get pending jobs.
 fastify.get("/api/jobs", (req, rep) => {
