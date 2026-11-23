@@ -158,7 +158,8 @@ fastify.get("/api/scores", async (req, rep) => {
 
 // Serve a MusicXML file.
 fastify.get("/api/score/:userId/:filename", async (req, rep) => {
-  if (!authenticateUser(req)) return rep.code(401).send({ error: "Please sign in." })
+  const isJobServer = req.headers["x-job-sig"] === JOBS_SIG
+  if (!isJobServer && !authenticateUser(req)) return rep.code(401).send({ error: "Please sign in." })
   const { userId, filename } = req.params
   if (!/^[0-9a-f-]{36}$/.test(userId) ||
       !/^[0-9a-f-]{36}\.(xml|musicxml)$/.test(filename))
