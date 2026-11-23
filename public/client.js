@@ -115,6 +115,7 @@ async function openScore(score) {
     renderScore(currentComposition)
     setStatus(viewerStatus, "Ready. Press Play to hear it.")
   } catch (err) {
+    console.error("Load error:", err.message, err.stack)
     setStatus(viewerStatus, `Error loading score: ${err.message}`, true)
   }
 }
