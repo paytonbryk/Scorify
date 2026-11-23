@@ -1,19 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap');
 
+/* ── Autumn palette ──────────────────────────────────────────────────────────
+   #2C1810  deep bark brown    (header, text)
+   #8B3A0F  burnt sienna       (primary buttons, accents)
+   #C4701A  amber orange       (hover states, highlights)
+   #E8C57A  warm straw         (backgrounds, borders)
+   #F5EDD8  parchment cream    (page background, card bg)
+   ──────────────────────────────────────────────────────────────────────── */
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Roboto', sans-serif;
   font-size: 14px;
-  background: #f5f5f5;
-  color: #212121;
+  background: #F5EDD8;
+  color: #2C1810;
   line-height: 1.5;
 }
 
 /* ── Header ── */
 header {
-  background: #212121;
-  color: #fff;
+  background: #2C1810;
+  color: #F5EDD8;
   padding: 12px 24px;
   display: flex;
   align-items: baseline;
@@ -24,13 +32,15 @@ header h1 {
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
+  color: #E8C57A;
 }
 .tagline {
   font-size: 12px;
-  opacity: 0.55;
+  opacity: 0.6;
   font-weight: 400;
   letter-spacing: 1px;
   text-transform: uppercase;
+  color: #F5EDD8;
 }
 
 /* ── Layout ── */
@@ -41,7 +51,7 @@ main { max-width: 920px; margin: 0 auto; padding: 24px 16px; }
   max-width: 380px;
   margin: 48px auto;
   background: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid #E8C57A;
   padding: 32px;
 }
 #authSection h2 {
@@ -50,19 +60,21 @@ main { max-width: 920px; margin: 0 auto; padding: 24px 16px; }
   letter-spacing: 1.5px;
   text-transform: uppercase;
   margin-bottom: 20px;
-  color: #666;
+  color: #8B3A0F;
 }
 #authSection form { display: flex; flex-direction: column; gap: 10px; }
-#authSection label { font-size: 12px; color: #666; letter-spacing: 0.5px; }
+#authSection label { font-size: 12px; color: #8B3A0F; letter-spacing: 0.5px; }
 #authSection input[type="email"] {
   padding: 8px 10px;
-  border: 1px solid #bbb;
+  border: 1px solid #E8C57A;
   font-family: inherit;
   font-size: 14px;
   outline: none;
   width: 100%;
+  background: #F5EDD8;
+  color: #2C1810;
 }
-#authSection input[type="email"]:focus { border-color: #212121; }
+#authSection input[type="email"]:focus { border-color: #8B3A0F; }
 
 /* ── Buttons ── */
 button {
@@ -72,18 +84,18 @@ button {
   letter-spacing: 1px;
   text-transform: uppercase;
   padding: 8px 16px;
-  border: 1px solid #212121;
-  background: #212121;
-  color: #fff;
+  border: 1px solid #8B3A0F;
+  background: #8B3A0F;
+  color: #F5EDD8;
   cursor: pointer;
 }
-button:hover { background: #444; border-color: #444; }
+button:hover { background: #C4701A; border-color: #C4701A; }
 button:disabled { opacity: 0.35; cursor: not-allowed; }
 button.secondary {
-  background: #fff;
-  color: #212121;
+  background: #F5EDD8;
+  color: #8B3A0F;
 }
-button.secondary:hover { background: #f0f0f0; }
+button.secondary:hover { background: #E8C57A; }
 
 /* ── Top bar ── */
 #topBar {
@@ -92,11 +104,17 @@ button.secondary:hover { background: #f0f0f0; }
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #E8C57A;
 }
-#userLabel { font-size: 12px; color: #888; letter-spacing: 0.5px; }
-#signOutBtn { background: transparent; color: #888; border-color: #ccc; font-size: 11px; padding: 4px 10px; }
-#signOutBtn:hover { color: #212121; border-color: #212121; background: transparent; }
+#userLabel { font-size: 12px; color: #8B3A0F; letter-spacing: 0.5px; }
+#signOutBtn {
+  background: transparent;
+  color: #8B3A0F;
+  border-color: #E8C57A;
+  font-size: 11px;
+  padding: 4px 10px;
+}
+#signOutBtn:hover { background: #E8C57A; color: #2C1810; border-color: #E8C57A; }
 
 /* ── Upload ── */
 #uploadSection {
@@ -106,32 +124,33 @@ button.secondary:hover { background: #f0f0f0; }
   margin-bottom: 24px;
   padding: 16px;
   background: #fff;
-  border: 1px solid #ddd;
+  border: 1px solid #E8C57A;
 }
-#uploadSection input[type="file"] { font-size: 12px; color: #555; }
+#uploadSection input[type="file"] { font-size: 12px; color: #2C1810; }
 
 /* ── Score list ── */
-#scoreList { list-style: none; background: #fff; border: 1px solid #ddd; margin-bottom: 24px; }
+#scoreList { list-style: none; background: #fff; border: 1px solid #E8C57A; margin-bottom: 24px; }
 #scoreList li {
   display: flex;
   align-items: center;
   padding: 10px 14px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #F5EDD8;
   gap: 10px;
 }
 #scoreList li:last-child { border-bottom: none; }
-#scoreList li:hover { background: #fafafa; }
-#scoreList li.active { background: #f0f0f0; }
+#scoreList li:hover { background: #FDF6E8; }
+#scoreList li.active { background: #E8C57A; }
 .score-name {
   flex: 1;
   cursor: pointer;
   font-size: 13px;
+  color: #2C1810;
 }
-.score-name:hover { text-decoration: underline; }
+.score-name:hover { color: #8B3A0F; text-decoration: underline; }
 .deleteBtn {
   background: transparent;
   border: none;
-  color: #bbb;
+  color: #E8C57A;
   font-size: 14px;
   padding: 2px 6px;
   letter-spacing: 0;
@@ -139,61 +158,61 @@ button.secondary:hover { background: #f0f0f0; }
   text-transform: none;
   cursor: pointer;
 }
-.deleteBtn:hover { color: #c0392b; background: transparent; border: none; }
+.deleteBtn:hover { color: #8B3A0F; background: transparent; border: none; }
 
 /* ── Viewer ── */
-#viewerSection { background: #fff; border: 1px solid #ddd; padding: 20px; }
+#viewerSection { background: #fff; border: 1px solid #E8C57A; padding: 20px; }
 #scoreTitle {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: #666;
+  color: #8B3A0F;
   margin-bottom: 14px;
 }
 #controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-#analyseBtn { background: #2a5934; border-color: #2a5934; }
-#analyseBtn:hover { background: #3d7a4a; border-color: #3d7a4a; }
-#scoreCanvas { display: block; width: 100%; background: #fff; border: 1px solid #eee; }
+#analyseBtn { background: #2C1810; border-color: #2C1810; }
+#analyseBtn:hover { background: #8B3A0F; border-color: #8B3A0F; }
+#scoreCanvas { display: block; width: 100%; background: #fff; border: 1px solid #E8C57A; }
 
 /* ── Analysis ── */
-#analysisSection { margin-top: 20px; border-top: 1px solid #eee; padding-top: 16px; }
+#analysisSection { margin-top: 20px; border-top: 1px solid #E8C57A; padding-top: 16px; }
 #analysisSection h3 {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #888;
+  color: #C4701A;
   margin-bottom: 10px;
 }
 #analysisResult {
-  background: #f5f5f5;
-  border: 1px solid #ddd;
+  background: #F5EDD8;
+  border: 1px solid #E8C57A;
   padding: 12px 14px;
   font-family: 'Roboto Mono', monospace;
   font-size: 12px;
   white-space: pre-wrap;
   max-height: 300px;
   overflow-y: auto;
-  color: #333;
+  color: #2C1810;
 }
 
 /* ── Status ── */
 [role="status"] {
   font-size: 12px;
-  color: #888;
+  color: #C4701A;
   min-height: 1.4em;
   margin-top: 6px;
   letter-spacing: 0.3px;
 }
-.error { color: #c0392b; }
-.success { color: #27ae60; }
+.error { color: #8B3A0F; font-weight: 500; }
+.success { color: #2C6E49; }
 
 h2 {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #888;
+  color: #C4701A;
   margin: 0 0 12px;
 }
