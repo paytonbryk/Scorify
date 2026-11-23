@@ -9,6 +9,8 @@ let authToken = localStorage.getItem("scorify_token") || null
 let currentComposition = null   // parsed Composition object
 let transport = null            // Tone.Transport handle
 let scheduledEvents = []        // Tone event IDs for cleanup
+let playbackNodes = []          // Synths and effects owned by the current playback
+let playbackRequest = 0         // Invalidates audio startup after Stop or another Play
 
 // ── DOM refs ──────────────────────────────────────────────────────────────
 const authSection   = document.getElementById("authSection")
@@ -102,6 +104,7 @@ let currentScore = null  // { filename, name, scoreUrl }
 async function openScore(score) {
   currentScore = score
   stopPlayback()
+  currentComposition = null
   viewerSection.hidden = false
   analysisSection.hidden = true
   analysisResult.textContent = ""
@@ -141,7 +144,7 @@ async function openScore(score) {
 }
 
 // ── Play / Stop ───────────────────────────────────────────────────────────
-document.getElementById("playBtn").addEventListener("click", playScore)
+document.getElementById("playBtn").addEventListener("click", () => playScore())
 document.getElementById("stopBtn").addEventListener("click", stopPlayback)
 
 // Playhead state
@@ -150,9 +153,21 @@ let playDurationBeats = 0
 let playStartBeat = 0
 
 async function playScore(fromBeat = null) {
+  try {
+    await startPlayback(fromBeat)
+  } catch (err) {
+    stopPlayback()
+    console.error("Playback error:", err)
+    setStatus(viewerStatus, `Unable to play score: ${err.message}`, true)
+  }
+}
+
+async function startPlayback(fromBeat = null) {
   if (!currentComposition) return setStatus(viewerStatus, "Open a score first.", true)
   stopPlayback()
+  const request = playbackRequest
   await Tone.context.resume()
+  if (request !== playbackRequest) return
   transport = Tone.Transport
   transport.cancel()
   transport.stop()
@@ -175,14 +190,17 @@ async function playScore(fromBeat = null) {
     }
   })
 
-  // Piano-like tone: AMSynth has natural harmonic modulation
+  // Piano-like triangle synth with a short attack and a decaying envelope.
   const reverb = new Tone.Freeverb(0.5, 2500).toMaster()
+  playbackNodes.push(reverb)
   const vol = new Tone.Volume(-6).connect(reverb)
+  playbackNodes.push(vol)
   const synths = new Map()
   notes.forEach(note => {
     if (!note.pitch) return
     if (!synths.has(note.staffNo)) {
       const synth = new Tone.PolySynth(16, Tone.Synth)
+      playbackNodes.push(synth)
       synth.set({
         oscillator: { type: "triangle8" },
         envelope: { attack: 0.005, decay: 0.8, sustain: 0.1, release: 1.4 }
@@ -192,14 +210,15 @@ async function playScore(fromBeat = null) {
     }
   })
 
-  const validNotes = notes.filter(n => !isNaN(n.ontime) && !isNaN(n.offtime))
-  playStartBeat = fromBeat !== null ? fromBeat : validNotes.reduce((m, n) => Math.min(m, n.ontime), 0)
+  const validNotes = notes.filter(n => n.pitch && Number.isFinite(n.ontime) && Number.isFinite(n.offtime) && n.offtime > n.ontime)
+  if (!validNotes.length) throw new Error("This score has no playable pitched notes.")
+  playStartBeat = Number.isFinite(fromBeat) ? fromBeat : validNotes.reduce((m, n) => Math.min(m, n.ontime), 0)
   const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), 0)
   playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
   const bpm = transport.bpm.value || 120
-  notes.forEach(note => {
+  validNotes.forEach(note => {
     if (!note.pitch || note.offtime <= playStartBeat) return
     if (isNaN(note.ontime) || isNaN(note.offtime)) return
     const synth = synths.get(note.staffNo)
@@ -251,6 +270,7 @@ function fmt(sec) {
 }
 
 function stopPlayback() {
+  playbackRequest++
   if (playheadRAF) { cancelAnimationFrame(playheadRAF); playheadRAF = null }
   const fill = document.getElementById("playheadFill")
   if (fill) fill.style.width = "0%"
@@ -259,6 +279,8 @@ function stopPlayback() {
     scheduledEvents.forEach(id => transport.clear(id))
     scheduledEvents = []
   }
+  playbackNodes.reverse().forEach(node => node.dispose())
+  playbackNodes = []
   setStatus(viewerStatus, "")
 }
 
