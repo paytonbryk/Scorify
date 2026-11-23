@@ -385,12 +385,16 @@ function parseMusicXML(xmlText) {
       Array.from(measure.querySelectorAll("note")).forEach(note => {
         const isChord    = !!note.querySelector("chord")
         const isRest     = !!note.querySelector("rest")
+        const isGrace    = !!note.querySelector("grace")
+        if (isGrace) return  // skip grace notes — they have no <duration>
         const durationTicks = num(note, "duration")
-        const durationBeats = durationTicks / currentDivisions
+        const durationBeats = currentDivisions > 0 ? durationTicks / currentDivisions : 0
+        if (isNaN(durationBeats)) return  // skip malformed notes
         const voiceNo    = parseInt(text(note, "voice")) || 1
 
         const ontime  = isChord ? measureCursor - durationBeats : measureCursor
         const offtime = ontime + durationBeats
+        if (isNaN(ontime) || isNaN(offtime)) return
 
         if (!isChord) measureCursor += durationBeats
 
