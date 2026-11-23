@@ -193,8 +193,8 @@ async function playScore(fromBeat = null) {
   })
 
   const validNotes = notes.filter(n => !isNaN(n.ontime) && !isNaN(n.offtime))
-  playStartBeat = fromBeat !== null ? fromBeat : Math.min(0, ...validNotes.map(n => n.ontime))
-  const endBeat = Math.max(...validNotes.map(n => n.offtime), 0)
+  playStartBeat = fromBeat !== null ? fromBeat : validNotes.reduce((m, n) => Math.min(m, n.ontime), 0)
+  const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), 0)
   playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
