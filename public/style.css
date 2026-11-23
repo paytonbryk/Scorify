@@ -171,6 +171,8 @@ button.secondary:hover { background: #E8C57A; }
   margin-bottom: 14px;
 }
 #controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.speed-control { display: flex; align-items: center; gap: 8px; color: #8B3A0F; }
+.speed-control select { font: inherit; padding: 6px; border: 1px solid #E8C57A; background: #fff; color: #2C1810; }
 #analyseBtn { background: #2C1810; border-color: #2C1810; }
 #analyseBtn:hover { background: #8B3A0F; border-color: #8B3A0F; }
 #scoreContainer { width: 100%; background: #fff; border: 1px solid #E8C57A; padding: 12px; min-height: 200px; overflow-x: auto; }
@@ -224,7 +226,7 @@ h2 {
   position: relative;
   height: 6px;
   background: #E8C57A;
-  margin-bottom: 12px;
+  margin: 26px 0 12px;
   cursor: pointer;
   border-radius: 0;
 }

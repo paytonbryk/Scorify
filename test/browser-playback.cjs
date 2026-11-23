@@ -20,6 +20,8 @@ async function main() {
     await page.goto('http://scorify.test/')
     await page.addScriptTag({ path: path.join(root, 'public/vendor/Tone.11.js') })
     await page.addScriptTag({ path: path.join(root, 'public/client.js') })
+    await page.addStyleTag({ content: fs.readFileSync(path.join(root, 'public/style.css'), 'utf8').replace(/^@import.*$/m, '') })
+    if (process.env.OSMD_JS) await page.addScriptTag({ path: process.env.OSMD_JS })
     const parse = xml => page.evaluate(xml => parseMusicXML(xml), xml)
 
     const voices = await parse(wrap(`<measure>${attrs}${note('C', 4, 4, '<staff>1</staff>')}<backup><duration>4</duration></backup>${note('C', 3, 2, '<staff>2</staff><voice>5</voice>')}<forward><duration>1</duration></forward>${note('D', 3, 1, '<staff>2</staff><voice>5</voice>')}</measure>`))
@@ -65,6 +67,30 @@ async function main() {
       assert.ok(score.sequencing.length > 34)
       console.log(`PASS: supplied score: simultaneous staves, C3 tie lasts 1.5 beats, encoded repeats; ${score.sequencing.length} performed measures`)
       await page.evaluate(xml => { currentComposition = parseMusicXML(xml) }, xml)
+      if (process.env.OSMD_JS) {
+        await page.evaluate(async xml => {
+          document.getElementById('appSection').hidden = false
+          document.getElementById('viewerSection').hidden = false
+          scoreDisplay = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
+            backend: 'svg', cursorsOptions: [{ type: 1, color: '#c4701a', alpha: 0.9, follow: false }]
+          })
+          await scoreDisplay.load(xml)
+          scoreDisplay.render()
+          updateScoreCursor(0)
+        }, xml)
+        const cursor = await page.evaluate(() => {
+          const first = scoreDisplay.cursor.Iterator.CurrentMeasureIndex
+          updateScoreCursor(1)
+          const withinMeasure = scoreDisplay.cursor.Iterator.CurrentSourceTimestamp.RealValue
+          updateScoreCursor(currentComposition.measureTimeline[2].ontime)
+          const third = scoreDisplay.cursor.Iterator.CurrentMeasureIndex
+          updateScoreCursor(currentComposition.measureTimeline[4].ontime)
+          return { first, withinMeasure, third, repeated: scoreDisplay.cursor.Iterator.CurrentMeasureIndex,
+            visible: !scoreDisplay.cursor.Hidden }
+        })
+        assert.deepEqual(cursor, { first: 0, withinMeasure: 0.25, third: 2, repeated: 0, visible: true })
+        console.log('PASS: actual OSMD cursor follows source measures and repeat jumps')
+      }
     } else {
       await page.evaluate(score => { currentComposition = score }, voices)
     }
@@ -74,6 +100,24 @@ async function main() {
     })
     await page.click('#playBtn')
     await page.waitForFunction(() => document.getElementById('viewerStatus').textContent === 'Playing…')
+    const totalBefore = (await page.locator('#playheadTime').textContent()).split(' / ')[1]
+    const bar = await page.locator('#playheadBar').boundingBox()
+    await page.locator('#playheadBar').click({ position: { x: bar.width / 2, y: bar.height / 2 } })
+    await page.waitForTimeout(200)
+    assert.equal((await page.locator('#playheadTime').textContent()).split(' / ')[1], totalBefore)
+    assert.ok(Math.abs(parseFloat(await page.locator('#playheadFill').evaluate(el => el.style.width)) - 50) < 10)
+    await page.locator('#playheadBar').click({ position: { x: bar.width / 4, y: bar.height / 2 } })
+    await page.waitForTimeout(200)
+    assert.equal((await page.locator('#playheadTime').textContent()).split(' / ')[1], totalBefore)
+    assert.ok(Math.abs(parseFloat(await page.locator('#playheadFill').evaluate(el => el.style.width)) - 25) < 10)
+    const beatBeforeSpeed = await page.evaluate(() => currentPlaybackBeat())
+    await page.selectOption('#playbackSpeed', '0.5')
+    await page.waitForTimeout(200)
+    assert.ok(Math.abs(await page.evaluate(() => currentPlaybackBeat()) - beatBeforeSpeed) < 2)
+    assert.equal(await page.evaluate(() => playbackSpeed), 0.5)
+    await page.selectOption('#playbackSpeed', '1')
+    await page.click('#playBtn')
+    console.log('PASS: repeated seeks preserve duration and absolute progress; live speed change preserves position')
     const audio = await page.evaluate(async () => {
       const meter = new Tone.Analyser('waveform', 2048)
       playbackNodes[0].connect(meter)

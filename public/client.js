@@ -99,12 +99,16 @@ async function loadScoreList() {
 }
 
 // ── Open & render a score ─────────────────────────────────────────────────
+let scoreDisplay = null
+let scoreCursorKey = null
+let playbackSpeed = 1
 let currentScore = null  // { filename, name, scoreUrl }
 
 async function openScore(score) {
   currentScore = score
   stopPlayback()
   currentComposition = null
+  scoreDisplay = null
   viewerSection.hidden = false
   analysisSection.hidden = true
   analysisResult.textContent = ""
@@ -131,10 +135,13 @@ async function openScore(score) {
       backend: "svg",
       drawTitle: true,
       drawComposer: true,
-      drawingParameters: "default"
+      drawingParameters: "default",
+      cursorsOptions: [{ type: 1, color: "#c4701a", alpha: 0.9, follow: false }]
     })
     await osmd.load(xml)
     await osmd.render()
+    scoreDisplay = osmd
+    updatePlayhead(0)
 
     setStatus(viewerStatus, "Ready. Press Play to hear it.")
   } catch (err) {
@@ -149,7 +156,6 @@ document.getElementById("stopBtn").addEventListener("click", stopPlayback)
 
 // Playhead state
 let playheadRAF = null
-let playDurationBeats = 0
 let playStartBeat = 0
 
 async function playScore(fromBeat = null) {
@@ -178,7 +184,7 @@ async function startPlayback(fromBeat = null) {
   if (!validNotes.length) throw new Error("This score has no playable pitched notes.")
   playStartBeat = Number.isFinite(fromBeat) ? Math.max(0, fromBeat) : 0
   const sortedTempi = [...tempi].sort((a, b) => a.ontime - b.ontime)
-  transport.bpm.value = sortedTempi.filter(t => t.ontime <= playStartBeat).at(-1)?.bpm || 120
+  transport.bpm.value = (sortedTempi.filter(t => t.ontime <= playStartBeat).at(-1)?.bpm || 120) * playbackSpeed
   transport.timeSignature = 4
 
   sortedTempi.forEach(t => {
@@ -186,7 +192,7 @@ async function startPlayback(fromBeat = null) {
       const tickVal = Math.round((t.ontime - playStartBeat) * transport.PPQ)
       if (!isNaN(tickVal)) {
         const id = transport.schedule(time => {
-          transport.bpm.setValueAtTime(t.bpm, time)
+          transport.bpm.setValueAtTime(t.bpm * playbackSpeed, time)
         }, `${tickVal}i`)
         scheduledEvents.push(id)
       }
@@ -196,7 +202,6 @@ async function startPlayback(fromBeat = null) {
   const synths = createPlaybackSynths(notes)
 
   const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), currentComposition.durationBeats || 0)
-  playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
   validNotes.forEach(note => {
@@ -207,7 +212,7 @@ async function startPlayback(fromBeat = null) {
     const noteStart = Math.max(note.ontime, playStartBeat)
     const onTickVal  = Math.round((noteStart - playStartBeat) * transport.PPQ)
     // Duration must be in seconds inside a Transport callback, not ticks
-    const durSecs = Math.max(0.01, playbackSeconds(noteStart, note.offtime, sortedTempi))
+    const durSecs = Math.max(0.01, playbackSeconds(noteStart, note.offtime, sortedTempi) / playbackSpeed)
     if (isNaN(onTickVal) || isNaN(durSecs)) return
     const onTick  = `${onTickVal}i`
     const id = transport.schedule(time => {
@@ -231,7 +236,7 @@ function createPlaybackSynths(notes) {
   playbackNodes.push(limiter)
   const reverb = new Tone.Freeverb(0.5, 2500).connect(limiter)
   playbackNodes.push(reverb)
-  const vol = new Tone.Volume(-18).connect(reverb)
+  const vol = new Tone.Volume(-10).connect(reverb)
   playbackNodes.push(vol)
   const synths = new Map()
   notes.forEach(note => {
@@ -265,24 +270,55 @@ function playbackSeconds(start, end, tempi) {
   return seconds + (end - cursor) * 60 / bpm
 }
 
-function startPlayhead() {
-  const bar  = document.getElementById("playheadBar")
-  const fill = document.getElementById("playheadFill")
-  const time = document.getElementById("playheadTime")
-  if (!bar) return
-  bar.style.display = "block"
+function scoreDurationBeats() {
+  if (!currentComposition) return 0
+  return currentComposition.notes.reduce((end, note) => Math.max(end, note.offtime), currentComposition.durationBeats || 0)
+}
 
+function currentPlaybackBeat() {
+  return Math.min(scoreDurationBeats(), playStartBeat + (transport?.ticks || 0) / (transport?.PPQ || 192))
+}
+
+function updatePlayhead(beat) {
+  const bar = document.getElementById("playheadBar")
+  if (!bar || !currentComposition) return
+  bar.style.display = "block"
+  const tempi = [...currentComposition.tempi].sort((a, b) => a.ontime - b.ontime)
+  const total = playbackSeconds(0, scoreDurationBeats(), tempi)
+  const elapsed = Math.max(0, Math.min(total, playbackSeconds(0, beat, tempi)))
+  document.getElementById("playheadFill").style.width = `${total > 0 ? elapsed / total * 100 : 0}%`
+  document.getElementById("playheadTime").textContent = `${fmt(elapsed / playbackSpeed)} / ${fmt(total / playbackSpeed)}`
+}
+
+function updateScoreCursor(beat) {
+  if (!scoreDisplay || !currentComposition?.measureTimeline) return
+  const visit = currentComposition.measureTimeline.find(m => beat >= m.ontime && beat < m.offtime)
+  if (!visit) return
+  const measure = scoreDisplay.Sheet.SourceMeasures[visit.measureIndex]
+  const offset = (beat - visit.ontime) / 4
+  const entries = measure.VerticalSourceStaffEntryContainers
+  let timestamp = new opensheetmusicdisplay.Fraction(0, 1)
+  for (const entry of entries) {
+    if (entry.Timestamp.RealValue <= offset + 1e-8) timestamp = entry.Timestamp
+  }
+  const key = `${visit.measureIndex}:${timestamp.RealValue}`
+  if (key === scoreCursorKey) return
+  scoreCursorKey = key
+  const sourceTime = opensheetmusicdisplay.Fraction.plus(measure.AbsoluteTimestamp, timestamp)
+  scoreDisplay.cursor.iterator = new opensheetmusicdisplay.MusicPartManagerIterator(
+    scoreDisplay.Sheet, sourceTime
+  )
+  scoreDisplay.cursor.show()
+}
+
+function startPlayhead() {
   function tick() {
-    const beats = transport.ticks / transport.PPQ
-    const pct = playDurationBeats > 0 ? Math.min(beats / playDurationBeats, 1) : 0
-    fill.style.width = (pct * 100) + "%"
-    const tempi = [...currentComposition.tempi].sort((a, b) => a.ontime - b.ontime)
-    const totalSec = playbackSeconds(playStartBeat, playStartBeat + playDurationBeats, tempi)
-    const curSec = playbackSeconds(playStartBeat, playStartBeat + beats, tempi)
-    time.textContent = `${fmt(curSec)} / ${fmt(totalSec)}`
+    const beat = currentPlaybackBeat()
+    updatePlayhead(beat)
+    updateScoreCursor(beat)
     playheadRAF = requestAnimationFrame(tick)
   }
-  playheadRAF = requestAnimationFrame(tick)
+  tick()
 }
 
 function fmt(sec) {
@@ -293,8 +329,9 @@ function fmt(sec) {
 function stopPlayback() {
   playbackRequest++
   if (playheadRAF) { cancelAnimationFrame(playheadRAF); playheadRAF = null }
-  const fill = document.getElementById("playheadFill")
-  if (fill) fill.style.width = "0%"
+  updatePlayhead(0)
+  scoreDisplay?.cursor.hide()
+  scoreCursorKey = null
   if (transport) {
     transport.stop()
     scheduledEvents.forEach(id => transport.clear(id))
@@ -305,17 +342,30 @@ function stopPlayback() {
   setStatus(viewerStatus, "")
 }
 
-// ── Seek: click on playhead bar ───────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  const bar = document.getElementById("playheadBar")
-  if (!bar) return
-  bar.addEventListener("click", e => {
-    if (!currentComposition) return
-    const rect = bar.getBoundingClientRect()
-    const pct = (e.clientX - rect.left) / rect.width
-    const seekBeat = playStartBeat + pct * playDurationBeats
-    playScore(seekBeat)
-  })
+// Seek on the complete score timeline, including tempo changes and repeats.
+document.getElementById("playheadBar").addEventListener("click", e => {
+  if (!currentComposition) return
+  const rect = e.currentTarget.getBoundingClientRect()
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+  const tempi = [...currentComposition.tempi].sort((a, b) => a.ontime - b.ontime)
+  const targetSeconds = pct * playbackSeconds(0, scoreDurationBeats(), tempi)
+  let low = 0, high = scoreDurationBeats()
+  for (let i = 0; i < 40; i++) {
+    const mid = (low + high) / 2
+    if (playbackSeconds(0, mid, tempi) < targetSeconds) low = mid
+    else high = mid
+  }
+  playScore((low + high) / 2)
+})
+
+document.getElementById("playbackSpeed").addEventListener("change", e => {
+  const speed = Number(e.target.value)
+  if (!Number.isFinite(speed) || speed < 0.25 || speed > 2) return
+  const playing = transport?.state === "started"
+  const beat = playing ? currentPlaybackBeat() : 0
+  playbackSpeed = speed
+  if (playing) playScore(beat)
+  else updatePlayhead(0)
 })
 
 // ── ChordGNN analysis ─────────────────────────────────────────────────────
@@ -540,11 +590,12 @@ function parseMusicXML(xmlText) {
     index++
   }
 
-  const notes = [], rests = [], tempi = []
+  const notes = [], rests = [], tempi = [], measureTimeline = []
   const pendingTies = new Map()
   let beat = 0, previousMeasure = -1
   for (const index of sequencing) {
     const measure = measures[index]
+    measureTimeline.push({ measureIndex: index, ontime: beat, offtime: beat + measure.duration })
     if (index !== previousMeasure + 1 || previousMeasure < 0) {
       tempi.push({ ontime: beat, bpm: measure.initialBpm })
     }
@@ -570,7 +621,7 @@ function parseMusicXML(xmlText) {
   return {
     name: text(doc, "work-title") || text(doc, "movement-title") || "Untitled",
     layer, notes, rests, tempi, timeSignatures, keySignatures, clefChanges,
-    sequencing, durationBeats: beat, expressions: [], miscXML: { anacrusis: 0 },
+    sequencing, measureTimeline, durationBeats: beat, expressions: [], miscXML: { anacrusis: 0 },
     pageLayout: { pageWidth: 1200, pageHeight: 1700, margins: { left: 70, right: 70, top: 88, bottom: 88 } }
   }
 }
