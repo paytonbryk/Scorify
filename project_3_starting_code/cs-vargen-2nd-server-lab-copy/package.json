@@ -1,0 +1,31 @@
+{
+    "name": "2nd-server-var-gen",
+    "version": "0.0.0",
+    "description": "Supports the VarGen project by being able to run arbitrarily complex scripts on a second server.",
+    "main": "sync_jobs.js",
+    "scripts": {},
+    "dependencies": {
+      "@tonejs/midi": "^2.0.27",
+      "maia-markov": "^0.0.72",
+      "dotenv": "^16.0.3",
+        "fastify": "^4.9.2",
+        "handlebars": "^4.7.7",
+        "@fastify/formbody": "^7.3.0",
+        "@fastify/static": "^6.5.0",
+        "@fastify/view": "^7.1.2",
+        "uuid": "^9.0.0",
+        "nodemailer":  "*"
+    },
+    "engines": {
+      "node": "12.x"
+    },
+    "repository": {
+      "url": "git@github.com:ChenyuGAO-CS/2nd-server-var-gen.git"
+    },
+    "license": "AGPL-3.0-or-later",
+    "keywords": [
+      "modular",
+      "podcast",
+      "editor"
+    ]
+  }

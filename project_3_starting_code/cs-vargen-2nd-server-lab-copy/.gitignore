@@ -1,0 +1,14 @@
+.env
+.DS_Store
+package-lock.json
+
+# Dependency directories
+node_modules/
+
+# Audio
+*.mid
+*.midi
+*.mp3
+*.wav
+*.ogg
+sound reco function.js

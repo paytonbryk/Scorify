@@ -1,0 +1,77 @@
+{
+  "*asterisk": "Properties prefixed with asterisks below are not in the specification, but serve to describe/explain it.",
+  "*version": "0.0.0",
+  "*date": "20180513",
+  "name": {
+    "*type": "string",
+    "*defn": "display-friendly title of the loop/song/piece/composition (hereafter composition)"
+  },
+  "notes": {
+    "*type": "array",
+    "*defn": "contains the note or sound events belonging to a composition. Each element of notes is an object with the following properties.",
+    "ontime": {
+      "*type": "number",
+      "*defn": "time measured in crotchet (quarter-note) beats at which a note begins, as displayed in piano roll (hereafter Roll) and staff notation (e.g., VexFlow)."
+    },
+    "duration": {
+      "*type": "non-negative number",
+      "*defn": "time measured in crotchet (quarter-note) beats for which a note lasts, as displayed in the Roll and staff notation."
+    },
+    "offtime": {
+      "*type": "number",
+      "*defn": "offtime = ontime + duration. Storing it is redundant (it could be calculated on demand instead), but it is so useful that we do store it at present."
+    },
+    "ontimeAdj": {
+      "*type": "number",
+      "*defn": "time measured in crotchet (quarter-note) beats by which the ontime of the note's playback should be adjusted. Stands for 'ontime adjusted'. This does not affect the display of the note in the Roll or staff notation, but does permit small-scale control over playback timings if the user so desires."
+    },
+    "offtimeAdj": {
+      "*type": "number",
+      "*defn": "time measured in crotchet (quarter-note) beats by which the offtime of the note's playback should be adjusted. Comments analogous to those for ontimeAdj apply here."
+    },
+    "pitch": {
+      "*type": "string",
+      "*def": "such as 'C#4' consisting of three components: a pitch class (one of the letters A-G); none, one, or more accidentals (# for sharp, b for flat, ## for double sharp, bb for double flat, potentially triple sharps and flats etc., but we will not cater for triple+ sharps/flats until there is a clear need); an octave number (an integer between 0 and 8, and we will not cater for outside of 'A0' to 'C8' until there is a clear need)."
+    },
+    "MNN": {
+      "*type": "non-negative integer",
+      "*def:": "MIDI note number, typically between 21 and 108, corresponds to the piano key that ought to be played in order to articulate the note. Controls the vertical position of the note in the Roll. Letting f be frequency in hertz and m be MNN, the conversion formulae for equal-temperament tuning are f = 440*2^[(m - 69)/12] and m = 12*log2(f/440) + 69."
+    },
+    "MPN": {
+      "*type": "non-negative integer",
+      "*def": "morphetic pitch number, between 37 and 88, corresponds to the height of the note in staff notation, with 'C4' set arbitrarily to MPN 60. There is a bijection between pitch and (MNN, MPN), so redundancy in storing all three. For more details, see Meredith, D. (2006). The ps13 pitch spelling algorithm. Journal of New Music Research, 35(2), 121-159."
+    },
+    "staffNo": {
+      "*type": "non-negative integer",
+      "*def": "index into a member of the layers array that has this same staffNo property. This property supports the association between notes and staves (e.g., for VexFlow rendering) and between notes and instruments (e.g., for Tone.js playback)."
+    }
+  },
+  "layer": {
+    "*type": "array",
+    "*defn": "contains groupings of events (e.g., notes) into musically meaningful collections. In staff notation, for instance, a layer might be the staff to which certain notes belong. In collaborative work, this might be a user with which  certain events are associated. Each element of layer is an object with some of the following properties.",
+    "type": {
+      "*type": "string",
+      "*defn": "takes the value 'instrument' if this is a layer for associating notes with a particular staff; takes the value 'user' if this is a layer for associating events with a specific user; takes the value 'annotation' if this is a label for a collection of events."
+    },
+    "staffNo": {
+      "*type": "non-negative integer",
+      "*defn": "index for linking notes, rests, and other events to a certain staff. It is not a mandatory property of a layer, since there are other ways to link/group notes/events, but we envisage staffNo being a well-used one."
+    }
+  },
+  "tempi": {
+    "*type": "array",
+    "*defn": "contains the initial and any subsequent tempi occurring in a composition. Any given tempo (singular of tempi) applies to all staves in a composition. A tempo is meant to indicate more than just a speed of playing: it is meant to indicate the manner in which something ought to be played too, such as “Allegro furioso” (quick and furiously!). Elements in the tempi array can be used to synchronise a performance of a piece with a symbolic representation. Each element of tempi is an object with the following properties.",
+    "ontime": {
+      "*type": "number",
+      "*defn": "time measured in crotchet (quarter-note) beats at which the tempo begins."
+    },
+    "bpm": {
+      "*type": "positive number",
+      "*defn": "beats per minute. As with ontime, which has units of crotchet beats, we also measure our bpms in crotchet beats per minute."
+    },
+    "tempo": {
+      "*type": "string",
+      "*defn": "indicates in words the speed at and/or manner in which something ought to be played."
+    }
+  }
+}

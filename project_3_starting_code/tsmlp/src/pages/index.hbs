@@ -1,0 +1,304 @@
+<!-- Based on MUI: https://github.com/muicss/mui -->
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>TSMLP</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="nodp, noydir" />
+    <meta
+      name="description"
+      content="
+TSMLP is a platform that allows users to upload their sheet music and recordings for sharing with select others."
+    />
+    <meta
+      name="keywords"
+      content="sheet music recordings sharing teach learn teacher student"
+    />
+    <link
+      rel="icon"
+      href="https://cdn.glitch.global/84be43a9-8874-43d7-bb91-cd1d3aea14c4/tsmlp_logo.ico?v=1737318318378"
+      sizes="32x32"
+    />
+
+    <link
+      href="https://cdn.glitch.global/84be43a9-8874-43d7-bb91-cd1d3aea14c4/tsmlp_logo_big.png?v=1737318294091"
+      rel="icon"
+      sizes="600x600"
+    />
+
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="https://cdn.muicss.com/mui-0.10.3/extra/mui-rem.min.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      media="screen"
+      href="https://www.muicss.com/static/cache/style-2e4e399e87.min.css"
+    />
+    <style>
+      @font-face { font-family: "icomoon"; src:
+      url("/style/fonts/icomoon/icomoon-841722186c.eot");
+      src:
+      url("/style/fonts/icomoon/icomoon-5b3fbc9812.woff")
+      format('woff'),
+      url("/style/fonts/icomoon/icomoon-17a9c787aa.ttf")
+      format('truetype'),
+      url("/style/fonts/icomoon/icomoon-784875256f.svg#icomoon")
+      format('svg'); font-weight: normal; font-style: normal; }
+    </style>
+    <script
+      src="https://cdn.muicss.com/mui-0.10.3/js/mui.min.js"
+      defer
+    ></script>
+    <script src="https://www.muicss.com/static/cache/vendor/jquery-2.1.4/jquery-f9c7afd057.min.js" defer></script>
+    <link href="style/css/style.css" rel="stylesheet">
+    <!-- <script src="/side_show_hide.js" defer></script> -->
+    <script src="/client.js" defer></script>
+
+  </head>
+  <body>
+
+    <header id="header">
+      <nav id="appbar" class="mui-container-fluid">
+        <table width="100%" cellspacing="0">
+          <tr class="mui--appbar-height">
+            <td>
+              <a
+                id="appbar-sidenav-show"
+                class="mui--visible-xs-inline-block mui--visible-sm-inline-block"
+              ><i class="icon-menu"></i></a>
+              <a
+                id="appbar-sidenav-hide"
+                class="mui--hidden-xs mui--hidden-sm"
+              ><i class="icon-menu"></i></a>
+
+              <span class="appbar-text">
+                [Could put]
+              </span>
+              <!-- <a class="appbar-brand" href="/docs/v1/css-js">CSS/JS</a> -->
+              <i class="icon-keyboard-arrow-right mui--hidden-xs"></i>
+              <span class="appbar-text">
+                [Hierarchy here]
+              </span>
+              <!-- <a class="appbar-brand mui--hidden-xs" href="/docs/v1/css-js/panels">Panels</a> -->
+
+            </td>
+            <td class="mui--text-right">
+              <div id="appbar-social-links" class="mui--hidden-xs">
+                <a href="">
+                  <i class="icon-github"></i>
+                </a>
+                <a href="">
+                  <i class="icon-twitter"></i>
+                </a>
+                <a href="">
+                  <i class="icon-email"></i>
+                </a>
+              </div>
+              <div class="mui-dropdown">
+                <a id="appbar-more-vert" data-mui-toggle="dropdown"><i
+                    class="icon-more-vert"
+                  ></i></a>
+                <ul class="mui-dropdown__menu mui-dropdown__menu--right">
+
+                  <li>
+                    <a id="signin" href="">Sign in</a>
+                  </li>
+                  <li>
+                    <a id="signup" href="">Sign up</a>
+                  </li>
+                  <li>
+                    <a href="">Support</a>
+                  </li>
+                  <li>
+                    <a href="">Feedback</a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </nav>
+    </header>
+    <div id="sidedrawer">
+
+      <nav id="sidenav" class="mui--no-user-select">
+        <div>
+          <h2 class="mui--appbar-line-height"><a href="/">TSMLP</a></h2>
+        </div>
+        <div class="mui-divider"></div>
+        <ul>
+
+          <li>
+            <strong class="">Upload</strong>
+            <ul>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/getting-started/introduction"
+                >Upload MusicXML file</a></li>
+
+
+
+            </ul>
+          </li>
+
+          <li>
+            <strong class="">Sheet music</strong>
+            <ul>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/getting-started/introduction"
+                >My sheet music</a></li>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/getting-started/introduction"
+                >Shared with me</a></li>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/getting-started/introduction"
+                >By class</a></li>
+
+            </ul>
+          </li>
+
+          <li>
+            <strong class="">Editor</strong>
+            <ul>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/design-files/sketch"
+                >Sheet music</a></li>
+
+              <li><a
+                  class=""
+                  href="/docs/v1/design-files/sketch"
+                >JSON editor</a></li>
+
+            </ul>
+          </li>
+
+        </ul>
+      </nav>
+
+    </div>
+
+    <div id="content-wrapper">
+      <div id="appbar-placeholder" class="mui--appbar-height"></div>
+
+      <div class="mui-container-fluid">
+        <div class="mui-row">
+          <div id="mainEvent" class="mui-col-sm-10 mui-col-sm-offset-1">
+            <div class="space-top"></div>
+
+            <h1>Welcome to TSMLP!</h1>
+
+            <div class="space-top"></div>
+
+            <!-- <h2>Example</h2> -->
+
+            <p class="mui--text-body1 mui--margin-bottom-medium">
+              This platform allows users to upload their sheet music and recordings for sharing with select others.
+            </p>
+
+            <p class="mui--text-body1 mui--margin-bottom-medium">
+              Annotation, editing, and customizable playback of the sheet music is all supported by the latest technology, helping users to teach and learn music in more effective and enjoyable ways.
+            </p>
+
+            <p class="mui--text-body1 mui--margin-bottom-medium">
+              Use the triple-dot menu in the top-right corner to sign in or sign up.
+            </p>
+
+            <p class="mui--text-body1">
+              If you were wondering, TSMLP stands for Teachers&rsquo; Sheet Music Library for Pedagogy.
+            </p>
+
+            <!-- <div class="mui-panel">
+              <div class="mui-panel">
+                PANEL CONTENT HERE!
+              </div>
+
+              <div class="highlight"><pre><span></span><span
+                    class="p"
+                  >&lt;</span><span class="nt">div</span>
+                  <span class="na">class</span><span class="o">=</span><span
+                    class="s"
+                  >&quot;mui-panel&quot;</span><span class="p">&gt;</span>
+                  <span class="cm">&lt;!-- content --&gt;</span>
+                  <span class="p">&lt;/</span><span class="nt">div</span><span
+                    class="p"
+                  >&gt;</span>
+                </pre></div>
+
+              <a href="/examples/v1/css-js/panel.html" target="_blank">View in
+                new tab &raquo;</a>
+            </div> -->
+
+            <div class="space-bottom"></div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- <div class="mui-container-fluid">
+
+        <table width="100%">
+          <tr>
+            <td width="50%" style="padding-bottom:20px;">
+
+              <a
+                href="/docs/v1/css-js/overlay"
+                style="text-decoration:none;font-size:20px;"
+              >&laquo; Previous</a>
+
+            </td>
+            <td
+              width="50%"
+              class="mui--text-right"
+              style="padding-bottom:20px;"
+            >
+
+              <a
+                href="/docs/v1/css-js/tables"
+                style="text-decoration:none;font-size:20px;"
+              >Next &raquo;</a>
+
+            </td>
+          </tr>
+        </table>
+
+      </div> -->
+
+    </div>
+    <footer id="footer">
+      <div class="mui-container-fluid">
+        <nav class="mui-row" role="navigation">
+          <div class="mui-col-sm-10 mui-col-sm-offset-1">
+            <div class="space-top"></div>
+            <ul class="mui-list--inline mui--text-body2 mui--text-light">
+              <li><a href="">Support</a></li>
+              <li><a href="">Feedback</a></li>
+              <li><a href="">Newsletter</a></li>
+              <li><a href="">Twitter</a></li>
+              <li><a href="">Facebook</a></li>
+              <li><a href="">Github</a></li>
+            </ul>
+            <div class="mui--text-caption mui--text-light">
+              &copy; 2016&ndash;<script>document.write(new Date().getFullYear())</script>, <a href="https://chai-music.glitch.me" target="_blank">Tom Collins</a> | All rights reserved.
+            </div>
+          </div>
+        </nav>
+      </div>
+
+    </footer>
+
+  </body>
+</html>

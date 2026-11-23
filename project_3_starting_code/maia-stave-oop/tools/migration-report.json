@@ -1,0 +1,140 @@
+{
+  "source": "maia-stave/public/composition/lib/maia_vex.js",
+  "methods": {
+    "smoothScroll": [],
+    "rehighlight": [
+      "bari",
+      "curr_nr",
+      "keyi",
+      "nri",
+      "voici"
+    ],
+    "points_belonging_to_interval": [],
+    "segment": [
+      "i"
+    ],
+    "row_of_max_bar_leq_bar_arg": [],
+    "row_of_max_ontime_leq_ontime_arg": [],
+    "bar_and_beat_number_of_ontime": [],
+    "ontime_of_bar_and_beat_number": [],
+    "copy_array_object": [],
+    "max_argmax": [],
+    "min_argmin": [],
+    "default_page_and_system_breaks": [],
+    "system_page_breaks2system_bar_limits": [],
+    "fj_clef2vexflow_clef_str": [],
+    "create_ties": [
+      "bari",
+      "clst_dur",
+      "i",
+      "idxi",
+      "obloi",
+      "segmi",
+      "stafi",
+      "voici"
+    ],
+    "create_textnote_durations": [
+      "bari",
+      "clst_dur",
+      "i",
+      "idxi",
+      "segi",
+      "segmi",
+      "stafi",
+      "targ_idx",
+      "tni",
+      "voici"
+    ],
+    "truncate_notes2time_intervals": [
+      "curr_notes",
+      "notei",
+      "segmi"
+    ],
+    "fill_missing_time_intervals": [
+      "segmi"
+    ],
+    "fill_intervals_for_textnotes": [
+      "segmi"
+    ],
+    "expand_written_ties": [
+      "notei",
+      "tiei"
+    ],
+    "tie_details": [],
+    "arrayObjectIndexOf": [],
+    "fj_notes_rests2vexflow_tab": [
+      "duration_str",
+      "stafi",
+      "systi",
+      "tbsi",
+      "tbti",
+      "voici"
+    ],
+    "fj_notes_rests2vexflow": [
+      "duration_str",
+      "lyr_idx",
+      "sluri",
+      "systi"
+    ],
+    "fj_expressions2vexflow_textnotes": [
+      "xpri"
+    ],
+    "integrate_clef_changes": [
+      "clefi",
+      "rel_clefs"
+    ],
+    "duration2vexflow_string": [],
+    "fj_artic2vexflow_artic": [],
+    "fj_technical2vexflow_technical": [],
+    "notes_and_rests_by_bar_staff_voice": [
+      "bari",
+      "curr_voice_split",
+      "expi",
+      "noti",
+      "nri",
+      "resti",
+      "stafi"
+    ],
+    "textnotes_by_bar_staff_voice": [
+      "bari",
+      "curr_voice_split",
+      "expi",
+      "i",
+      "ichar",
+      "stafi",
+      "voice_no",
+      "xpi",
+      "xpri"
+    ],
+    "cobj2vex": [
+      "accdi",
+      "artc_key",
+      "artci",
+      "as1",
+      "bari",
+      "beami",
+      "clefi",
+      "curr_artc",
+      "curr_tech",
+      "curr_txtn",
+      "keyi",
+      "lyr_idx",
+      "nri",
+      "sluri",
+      "stafi",
+      "systi",
+      "tbsi",
+      "tbti",
+      "tech_key",
+      "techi",
+      "tiei",
+      "tni",
+      "ts1",
+      "tsigi",
+      "tt1",
+      "tupli",
+      "voici"
+    ],
+    "excerpt": []
+  }
+}

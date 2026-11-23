@@ -1,0 +1,940 @@
+/******************************************************************************
+START Glitch hello-app default styles
+
+The styles in this section do some minimal CSS resets, set default fonts and 
+colors, and handle the layout for our footer and "Remix on Glitch" button. If
+you're new to CSS they may seem a little complicated, but you can scroll down
+to this section's matching END comment to see page-specific styles.
+******************************************************************************/
+/* Our default values set as CSS variables */
+:root {
+  --color-bg: #BDC9FF;
+  --color-text-main: #000000;
+  --color-primary: #AFECE0;
+  --wrapper-height: 87vh;
+  --image-max-width: 300px;
+  --image-margin: 3rem;
+  --font-family: "HK Grotesk";
+  --font-family-header: "HK Grotesk";
+}
+
+/* Basic page style resets */
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+
+/* Import fonts */
+@font-face {
+  font-family: HK Grotesk;
+  src: url("https://cdn.glitch.me/605e2a51-d45f-4d87-a285-9410ad350515%2FHKGrotesk-Regular.otf?v=1603136326027")
+    format("opentype");
+}
+@font-face {
+  font-family: HK Grotesk;
+  font-weight: bold;
+  src: url("https://cdn.glitch.me/605e2a51-d45f-4d87-a285-9410ad350515%2FHKGrotesk-Bold.otf?v=1603136323437")
+    format("opentype");
+}
+
+
+.divider {
+  padding: 0 1rem;
+}
+/******************************************************************************
+END Glitch hello-app default styles
+******************************************************************************/
+
+body {
+  font-family: HK Grotesk;
+  box-sizing: border-box; /* Include padding in element's width */
+  /* background-color: var(--color-bg); */
+  background-image: linear-gradient(rgb(2, 1, 2) 0%, rgb(42, 25, 55) 50%, rgb(42, 25, 55) 75%, rgb(2, 1, 2) 100%);
+  background-size: 200% auto;
+  color: #8653ba;
+  /*Setting the distance between the page content and the left/right side*/
+  padding-left: 160px;
+  padding-right: 160px;
+}
+
+/* Media query for screens smaller than 768px */
+@media (max-width: 900px) {
+    body {
+        padding-left: 10px; /* Smaller padding for narrow screens */
+        padding-right: 10px;
+    }
+}
+
+/* Page structure */
+.wrapper {
+  min-height: var(--wrapper-height);
+  display: grid;
+  place-items: center;
+  margin: 0 1rem;
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: left;
+  justify-content: left;
+}
+.centered-text {
+  color: rgb(158, 158, 158);
+  text-align: center;
+  padding-left: 100px;
+  padding-right: 100px;
+}
+
+p {
+  font-size: 1.25rem;
+  color: white;
+}
+
+/* Title h1 style */
+.title {
+  color: white;
+  font-family: HK Grotesk;
+  font-style: normal;
+  font-weight: bold;
+  font-size: 100px;
+  line-height: 105%;
+  margin: 2rem 0 0;
+}
+
+/* Very light scaling for our illustration */
+.illo-container {
+  display: flex;
+  justify-content: flex-end;
+}
+.illustration {
+  max-width: 100%;
+  max-height: 150px;
+  margin-top: 1rem;
+}
+
+/* Styles for our custom color form and its results */
+.color-info {
+  margin-left: 5px;
+}
+.color-search {
+  margin-top: 3rem;
+}
+.color-form {
+  width: 90%;
+  max-width: 500px;
+  margin-left: 5px;
+}
+
+form {
+  margin: 0.75rem 0;
+}
+
+
+input {
+  background-color: transparent;
+  font-family: inherit;
+  font-size: 100%;
+  border: 1px solid rgb(176 190 197);
+  box-sizing: border-box;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  margin-top: 20px;
+}
+label {
+  color: #FFFFFF;
+  font-weight: bold;
+}
+
+/* Instructions */
+.instructions {
+  margin: 1rem auto 0;
+}
+.instructions p {
+  font-size: 1rem;
+}
+h1 {
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 56px;
+  padding-top: 60px;
+}
+h2 {
+  color: #FFFFFF;
+}
+
+
+/******************************************************************************
+* Style for email input box. 
+******************************************************************************/
+.input-container {
+    position: relative;
+    margin: 0 auto;
+}
+#emailAddr2 {
+    background-color: transparent;
+/*     border: 1px solid rgb(176 190 197); */
+    padding: 10px; /* Setting the inner margin */
+    position: relative;
+    color: #e8e8e8;
+    width: 100%;
+}
+.input-label {
+    position: absolute;
+    top: 65%;
+    left: 10px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: top 0.3s, font-size 0.3s, color 0.3s;
+    font-size: 16px;
+    color: #999;
+}
+
+#emailAddr2:focus + .input-label {
+    top: 10px; /* Move the prompt text above the input box */
+    font-size: 12px; /* Change text size */
+    color: white; /* Change text color */
+    border-color: white;
+}
+
+/******************************************************************************
+* Style for email button 
+******************************************************************************/
+#emailButton {
+    background-color: rgb(186 142 240); 
+    color: white; 
+    border: 2px solid white; 
+    padding: 10px 20px; 
+    text-align: center; 
+    text-decoration: none; 
+    display: inline-block; 
+    font-size: 16px; 
+    margin: 20px 2px; 
+    cursor: pointer; 
+    border-radius: 4px; 
+    width: 100%;
+}
+
+#emailButton:hover {
+    background-color: rgb(149 105 192); 
+}
+
+
+/******************************************************************************
+*  Style for MIDI upload box. 
+******************************************************************************/
+.custom-file-upload {
+    display: inline-block;
+    padding: 10px 20px;
+    color: white;
+    border-radius: 4px;
+    border: 3px dashed rgb(176 190 197);
+    transition: background-color 0.3s, border-color 0.3s;
+    width: 100%;
+    z-index: 2;
+}
+.custom-file-upload input {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  opacity: 0;
+  cursor: pointer;
+  left: 0px;
+  top: 0px;
+  border-radius: 4px;
+  border: 3px solid #4CAF50;
+}
+/* Hover effect */
+.custom-file-upload:hover {
+    border: 3px solid rgb(253 253 253);
+    transition: background-color 0.3s, border-color 0.5s;
+}
+/* Container for label to align properly */
+.file-upload-label-container {
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-label {
+    display: inline-block;
+    padding: 0px 5px;
+    color: white;
+    border-radius: 4px;
+    transition: background-color 0.3s, border-color 0.3s;
+    pointer-events: none; /* Allow clicks to pass through to input */
+}
+.file-placeholder {
+    display: inline-block;
+    padding: 0px 5px;
+    color: white;
+    border-radius: 4px;
+    transition: background-color 0.3s, border-color 0.3s;
+    pointer-events: none; /* Allow clicks to pass through to input */
+}
+
+
+/******************************************************************************
+*  Style for varGen button 
+******************************************************************************/
+#midiButton {
+    color: white; /* Text color */
+    background-size: 200% auto;
+    display: inline-block;
+    background-image: linear-gradient(45deg, #8653ba, #ba83f0 51%);
+    touch-action: manipulation;
+    transition: background-position 0.3s; /* The background image is animated by changing the value of background-position, which causes the background image to move to the right. */
+    border-radius: 4px;
+    font-size: 18px;
+    margin: 20px 2px;
+    padding: 10px 20px;
+    width: 100%;
+}
+
+#midiButton:hover {
+    background-position: 100% 0; 
+}
+
+/******************************************************************************
+* Style for generation results select button 
+******************************************************************************/
+#histDownloadButton {
+    background-color: rgb(149 105 192); 
+    color: white; 
+    border: 1px solid white; 
+    padding: 10px 20px; 
+    text-align: center; 
+    text-decoration: none; 
+    display: inline-block; 
+    font-size: 16px; 
+    margin: 20px 2px; 
+    cursor: pointer; 
+    border-radius: 8px; 
+    width: 18%;
+}
+
+#histDownloadButton:hover {
+    background-color: #8653ba; 
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Style for select list */
+.history-select {
+    display: inline-block;
+    position: relative;
+    font-family: Arial, sans-serif;
+}
+
+.history-select select {
+    appearance: none; 
+    -webkit-appearance: none; 
+    -moz-appearance: none; 
+    width: 80%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccccccc;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: transparent;
+    margin: 20px 2px;
+    color: white
+}
+
+/* arrow symbol */
+.history-select::after {
+    content: "\25BC"; /* Unicode drop-down arrow symbol */
+    position: absolute;
+    top: 50%;
+    left: 77%;
+    transform: translateY(-50%);
+    color: #999999;
+}
+
+.history-select select:hover {
+    border-color: #999999;
+}
+
+.history-select select:active {
+    border-color: #333333;
+    background-color: #e0e0e0
+}
+
+
+
+
+/******************************************************************************
+CSS for navigation 
+******************************************************************************/
+
+nav {
+    background-color: #020102; /* Back ground colour */
+/*     margin-left: 40px;
+    margin-right: 40px; */
+    margin-top: 20px;
+}
+
+nav ul {
+    list-style-type: none; /* Remove the default style for list items */
+    padding: 0;
+    margin: 0;
+    text-align: right;
+}
+
+nav ul li {
+    display: inline; /* Arrange list items horizontally */
+    margin-left: 10px;
+}
+
+nav ul li a {
+    display: inline-block;
+    color: white; /* Colour for text */
+    text-decoration: none; /* Remove underlining from links */
+    padding: 10px 10px; /* inner margin */
+}
+
+nav ul li a:hover {
+    background-color: #020102; /* Background colour on mouse hover */
+    color: #ba83f0;
+/*     box-shadow: 0 3px 6px hsla(0,0%,100%,.16),0 3px 6px hsla(0,0%,100%,.13); */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+nav ul li a:focus {
+    background-color: #020102; /* Background colour on mouse hover */
+    color: #ba83f0;
+/*     box-shadow: 0 3px 6px hsla(0,0%,100%,.16),0 3px 6px hsla(0,0%,100%,.13); */
+    transition: background-color 0.3s, color 0.3s;
+}
+
+
+
+/* Setting styles for login individually */
+nav ul li a.login {
+    color: white; /* Text color */
+    background-size: 200% auto;
+    background-image: linear-gradient(45deg, #8653ba, #ba83f0 51%);
+    touch-action: manipulation;
+    transition: background-position 0.3s; /* The background image is animated by changing the value of background-position, which causes the background image to move to the right. */
+    border-radius: 20px;
+}
+
+
+nav ul li a.login:hover {
+  background-position: 100% 0;
+    
+}
+
+/* For small screen, need to be developed in the future*/
+ @media only screen and (max-width: 900px) {
+    nav ul li {
+        display: block; /* Vertical alignment of list items on small screens */
+        padding: 0px 80px; /* Adjusting inner margins */
+    } 
+
+    nav ul li a {
+        display: block;
+        padding: 10px 30px; /* Adjusting inner margins */
+    }
+}
+
+
+/* Display two MIDI player in one line */
+
+.flex-container {
+    display: flex;
+    justify-content: space-between; 
+    align-items: center; 
+    width: 100%; 
+    padding: 0px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    box-sizing: border-box; 
+}
+
+
+.player {
+    flex: 1; /* Distribute the player evenly across the available space */
+    max-width: 49%; 
+    min-width: 200px; /* the minimal size of player */
+    margin: 0 0px; 
+    min-height: 320;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    display: block;
+    text-align: center;
+}
+
+.player label {
+  display: block;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 10px;
+  text-align: center;
+  background: #bea5da; /* #c8bed4; */
+  cursor: pointer;
+}
+
+.player.theme label {
+  background: #8653ba;
+}
+.player.general {
+  max-width: 100%;
+}
+.player.general label {
+  background: #8653ba;
+  max-width: 100%;
+}
+
+/* .player label:hover {
+  background: #c8bed4;
+} */
+
+
+
+/******************************************************************************
+CSS for MIDI-player
+******************************************************************************/
+
+/* Custom player style */
+midi-player, midi-visualizer {
+  display: block;
+  width: inherit;
+  margin: 0; }
+
+midi-visualizer {
+  border-radius: 0, 0, 0, 0; /* 10px 10px 0px 0px ;*/
+  border: 1px solid #e9e9e9;
+  border-top: none;
+  background: rgba(254,254,254,1); }
+  midi-visualizer .piano-roll-visualizer {
+    width: inherit;
+    overflow: auto;
+    }
+midi-player::part(control-panel) {
+  border-radius: 0 0 10px 10px ;
+  border: 1px solid #e9e9e9;
+  border-bottom: none;
+  background: linear-gradient(rgba(254,254,254,1), rgba(233,233,233,1)); }
+
+
+midi-visualizer svg {
+  margin: 2px; 
+}
+
+midi-visualizer svg rect.note {
+  opacity: calc(min(1, (var(--midi-velocity) + 30) / 128) * 0.75); 
+}
+
+midi-visualizer svg rect.note.active {
+  opacity: calc(min(1, (var(--midi-velocity) + 30) / 128) * 0.9);
+  stroke: black;
+  stroke-width: 0.75;
+  stroke-opacity: 0.75; 
+}
+
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="0"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="1"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="2"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="3"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="4"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="5"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="6"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="7"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="8"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="9"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="10"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="11"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="12"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="13"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="14"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="15"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="16"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="17"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="18"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="19"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="20"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="21"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="22"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="23"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="24"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="25"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="26"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="27"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="28"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="29"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="30"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="31"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="32"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="33"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="34"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="35"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="36"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="37"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="38"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="39"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="40"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="41"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="42"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="43"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="44"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="45"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="46"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="47"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="48"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="49"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="50"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="51"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="52"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="53"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="54"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="55"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="56"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="57"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="58"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="59"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="60"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="61"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="62"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="63"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="64"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="65"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="66"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="67"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="68"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="69"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="70"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="71"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="72"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="73"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="74"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="75"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="76"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="77"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="78"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="79"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="80"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="81"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="82"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="83"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="84"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="85"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="86"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="87"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="88"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="89"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="90"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="91"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="92"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="93"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="94"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="95"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="96"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="97"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="98"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="99"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="100"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="101"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="102"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="103"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="104"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="105"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="106"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="107"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="108"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="109"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="110"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="111"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="112"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="113"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="114"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="115"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="116"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="117"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="118"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="119"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="120"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="121"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="122"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="123"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="124"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="125"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="126"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="127"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="128"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="129"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="130"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="131"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="132"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="133"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="134"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="135"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="136"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="137"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="138"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="139"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="140"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="141"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="142"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="143"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="144"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="145"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="146"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="147"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="148"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="149"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="150"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="151"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="152"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="153"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="154"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="155"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="156"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="157"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="158"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="159"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="160"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="161"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="162"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="163"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="164"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="165"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="166"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="167"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="168"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="169"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="170"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="171"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="172"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="173"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="174"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="175"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="176"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="177"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="178"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="179"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="180"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="181"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="182"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="183"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="184"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="185"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="186"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="187"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="188"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="189"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="190"] {
+  fill: #00b680; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="191"] {
+  fill: #de0015; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="192"] {
+  fill: #4f00cf; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="193"] {
+  fill: #d39e00; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="194"] {
+  fill: #f3006f; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="195"] {
+  fill: #00879c; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="196"] {
+  fill: #de6500; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="197"] {
+  fill: #009c24; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="198"] {
+  fill: #0062cc; }
+midi-visualizer .piano-roll-visualizer svg rect.note[data-instrument="199"] {
+  fill: #00b680; }

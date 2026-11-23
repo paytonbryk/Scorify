@@ -1,0 +1,7 @@
+#appbar, #footer {
+	background-color: #773b71;
+}
+
+.appbar-text, .icon-keyboard-arrow-right {
+  color: white
+}

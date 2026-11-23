@@ -1,0 +1,32 @@
+{
+  "name": "tsmlp",
+  "version": "0.1.0",
+  "description": "Teacher's Sheet Music Library for Pedagogy",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "minimist": "^1.2.8",
+    "fastify": "^4.11.0",
+    "handlebars": "^4.7.7",
+    "@fastify/static": "^6.6.0",
+    "@fastify/view": "^7.3.0",
+    "uuid": "^8.3.2",
+    "nodemailer": "^6.6.3",
+    "search-index": "^3.4.0",
+    "maia-util": "^0.3.12"
+  },
+  "engines": {
+    "node": "14.x"
+  },
+  "repository": {
+    "url": "git@github.com:tomthecollins/tsmlp.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "sheet music",
+    "annotation"
+  ]
+}

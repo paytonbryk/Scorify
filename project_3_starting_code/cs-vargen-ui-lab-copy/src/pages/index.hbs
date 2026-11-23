@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.4.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  </head>
+  <body>
+    <nav>
+      <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#">AI Music Variation</a></li>
+          <li><a href="#">AI Music Orchestration</a></li>
+          <li><a href="#" class="login">Sign up/Login</a></li>
+      </ul>
+    </nav>
+<!--  *********** HTML for Login   ***********  -->
+    <div class="content">
+
+      <div id="theMainThing" class="centered-text">
+        <h1>
+          Sign In
+        </h1>
+          Login or create an account with email<br>
+
+        <div class="input-container">
+          <input id="emailAddr2" name="emailAddr" required="required" type="text">
+          <label for="emailAddr2" class="input-label">Email</label>
+          <script>
+              const input = document.getElementById('emailAddr2');
+              const label = document.querySelector('.input-label');
+
+              input.addEventListener('focus', function() {
+                  label.style.top = '5px';
+                  label.style.fontSize = '12px';
+                  label.style.color = 'white';
+              });
+
+              input.addEventListener('blur', function() {
+                  if (!input.value) {
+                      label.style.top = '65%';
+                      label.style.fontSize = '16px';
+                      label.style.color = '#999999';
+                  }
+              });
+          </script>
+        </div>
+        <button id="emailButton" type="submit" onclick="myClient.generate_magic_link()">Submit</button>
+        You will receive a link to access anything you create on this site
+        <br><br><br><br><br><br><br><br><br>
+      </div>
+      
+      
+      
+      <div class="Sthg"><p>Goodbye from HTML file!</p>
+      
+      </div>
+      
+<!--  *********** HTML for history selector   ***********  -->
+      <div id="authSelect" class="history-select" hidden>
+        <select id="mySelect">
+            <option value="volvo">Volvo</option>
+            <option value="saab">Saab</option>
+            <option value="mercedes">Mercedes</option>
+            <option value="audi">Audi</option>
+        </select>
+        <button id="histDownloadButton" onclick="DownloadOptions()">Download</button>
+      </div>
+      <div id="authMidi" hidden>
+        <div class="flex-container">
+          <div class="player theme" id="themePlayer">
+            <label>Theme</label>
+            <midi-visualizer type="piano-roll" id="authMidiVisualizerTheme" src="https://tomcollinsresearch.net/participantStudies/var24/good_examples_mp3/e0_real_Other%20games_PlayStation%202_Dark%20Cloud%202_Neverending%20Adventure_C_0.mid"></midi-visualizer>
+
+            <midi-player src="https://tomcollinsresearch.net/participantStudies/var24/good_examples_mp3/e0_real_Other%20games_PlayStation%202_Dark%20Cloud%202_Neverending%20Adventure_C_0.mid" sound-font="" visualizer="#authMidiVisualizerTheme" id="authMidiPlayerTheme">
+            </midi-player>
+          </div>
+
+          <div class="player" id="varPlayer">
+            <label>Variation</label>
+            <midi-visualizer type="piano-roll" id="authMidiVisualizerVar" src="https://tomcollinsresearch.net/participantStudies/var24/good_examples_mp3/e0_real_Other%20games_PlayStation%202_Dark%20Cloud%202_Neverending%20Adventure_C_0_tvAttnVar0.mid"></midi-visualizer>
+
+            <midi-player src="https://tomcollinsresearch.net/participantStudies/var24/good_examples_mp3/e0_real_Other%20games_PlayStation%202_Dark%20Cloud%202_Neverending%20Adventure_C_0_tvAttnVar0.mid" sound-font="" visualizer="#authMidiVisualizerVar" id="authMidiPlayerVar">
+            </midi-player>
+          </div>
+        </div>
+
+<!--         <midi-visualizer type="piano-roll" id="authMidiVisualizer" src=""></midi-visualizer>
+        <midi-player src="" sound-font="" visualizer="#authMidiVisualizer" id="authMidiPlayer">
+        </midi-player> -->
+
+      </div>
+
+<!--  *********** HTML for VarGen   ***********  -->
+      
+      <div id="varGen" class="centered-text" hidden>
+        <h1>
+          AI Music Variation
+        </h1>
+        Upload a theme <br>or<br> select a theme from our library randomly.<br>
+       
+<!--         <p>
+          Example of how to upload an audio file to the server.
+        </p> -->
+
+        <form class="color-search" enctype="multipart/form-data">
+          <div class="custom-file-upload">
+            <input id ="fileUpload" type="file" name="filetoupload" accept="audio/midi, audio/x-midi"><br>
+            <div class="file-upload-label-container">
+              <label for="fileUpload" class="file-label">Drag and drop a MIDI file or similar to upload:</label>
+              <span class="file-placeholder">No file chosen</span>
+              <script>
+                document.getElementById('fileUpload').addEventListener('change', function() {
+                    const fileName = this.files.length > 0 ? this.files[0].name : 'No file chosen';
+                    document.querySelector('.file-placeholder').textContent = fileName;
+                });
+              </script>
+            </div>
+          </div>  
+        </form>
+        
+       
+
+  <!--       <section id="mainVisualizer"> -->
+<!--         <h2>A html-midi-player demo</h2> -->
+<!--         <p>This is a demo for the <strong>html-midi-player</strong> package. For more information, see <a href="https://github.com/cifkao/html-midi-player" target="_blank">its GitHub repository</a>.</p> -->
+        <div class="player general">
+          <label>Preview of the Uploaded MIDI file</label>
+          <midi-visualizer type="piano-roll" id="mainVisualizer" src="https://cdn.jsdelivr.net/gh/cifkao/html-midi-player@2b12128/jazz.mid"></midi-visualizer>
+          <midi-player src="https://cdn.jsdelivr.net/gh/cifkao/html-midi-player@2b12128/jazz.mid" sound-font="" visualizer="#mainVisualizer" id="mainPlayer">
+          </midi-player>
+        </div>
+        <label for="model-selector">Please choose a model:</label>
+        <select id="model-selector">
+            <option value="VaTr POP909">My theme genre is close to pop... (Variation Transformer trained on the POP909-TVar dataset)</option>
+            <option value="VaTr VGMIDI">My theme genre is close to video game music... (Variation Transformer trained on the VGMIDI-TVar dataset)</option>
+        </select>
+
+        <p id="selected-option">You selected: None</p>
+         <button id="midiButton" type="submit" onclick="myClient.midi_upload()">Generate</button>
+      </div>
+
+    <script>
+        const file = document.querySelector('input[type="file"]');
+        file.addEventListener('change', function() {
+          const reader = new FileReader();
+          reader.onload = function() {
+            // const player = document.querySelector('midi-player');
+            const player = document.getElementById('mainPlayer');
+            player.src = reader.result;
+            // const visualiser = document.querySelector('midi-visualizer');
+            const visualiser = document.getElementById('mainVisualizer');
+            visualiser.src = reader.result;
+          };
+          reader.readAsDataURL(file.files[0]);
+        });
+    
+      </script>
+      
+<!--       <p>This is a demo for the <strong>html-midi-player</strong> package. For more information, see <a href="https://github.com/cifkao/html-midi-player" target="_blank">its GitHub repository</a>.</p>
+      <midi-player src="https://cdn.jsdelivr.net/gh/cifkao/html-midi-player@2b12128/jazz.mid" sound-font="" visualizer="#Visualizer2" id="Player2">
+      </midi-player>
+      <midi-visualizer type="piano-roll" id="Visualizer2" src="https://cdn.jsdelivr.net/gh/cifkao/html-midi-player@2b12128/jazz.mid"></midi-visualizer>
+       -->
+    </div>
+    
+    <script src="./maia-util.js"></script>
+    <script src="./maia-gui.js"></script>
+    <script src="./instr_def.js"></script>
+    <script src="sketch.js" defer></script>
+    
+
+
+
+  </body>
+</html>
