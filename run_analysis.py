@@ -4,14 +4,15 @@ Usage:
     python run_analysis.py --score_path input.musicxml
 Outputs:
     <input>-analysis.csv        (per-note predictions)
-    <input>-analysis.musicxml   (harmony elements injected)
+    <input>-analysis.musicxml   (timed Roman numerals above the top staff)
 """
 import argparse
 import os
 import sys
 import torch
 import partitura as pt
-from lxml import etree
+from bisect import bisect_right
+from annotate_musicxml import annotate_musicxml
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--score_path", required=True, help="Path to input MusicXML file")
@@ -93,42 +94,28 @@ csv_path = stem + "-analysis.csv"
 df.to_csv(csv_path, index=False)
 print(f"\nCSV saved: {csv_path}", flush=True)
 
-# --- inject <harmony> into MusicXML ---
+# --- annotate the original MusicXML at the model's written-score positions ---
 xml_out = stem + "-analysis.musicxml"
 try:
-    tree = etree.parse(args.score_path)
-    root_el = tree.getroot()
-    ns = root_el.nsmap.get(None, "")
-    ns_prefix = f"{{{ns}}}" if ns else ""
-
-    measures = root_el.findall(f".//{ns_prefix}measure")
-    measure_map = {}
-    for m in measures:
-        num = m.get("number", "")
-        if num:
-            measure_map[num] = m
-
-    # one harmony element per unique (measure, romanNumeral) pair
-    seen = set()
-    for _, row in df.iterrows():
-        mnum = str(int(row.get("measure", 0)))
-        rn   = str(row.get("romanNumeral", "?"))
-        key  = str(row.get("localkey", "?"))
-        sig  = (mnum, rn, key)
-        if sig in seen or mnum not in measure_map:
-            continue
-        seen.add(sig)
-
-        m_el = measure_map[mnum]
-        harmony = etree.SubElement(m_el, "harmony")
-        fn = etree.SubElement(harmony, "function")
-        fn.text = f"{key}: {rn}"
-        kind_el = etree.SubElement(harmony, "kind")
-        kind_el.text = "major"
-
-    tree.write(xml_out, pretty_print=True, xml_declaration=True, encoding="UTF-8")
-    print(f"Annotated MusicXML saved: {xml_out}", flush=True)
+    top_part = score.parts[0]
+    measures = list(top_part.iter_all(pt.score.Measure))
+    starts = [measure.start.t for measure in measures]
+    if not starts:
+        raise ValueError("The loaded score has no measures.")
+    events = []
+    for row in df.to_dict("records"):
+        # Beat units may change with meter and pickups. Let Partitura map them
+        # back to the score timeline, then express local offsets in quarters.
+        position = float(top_part.inv_beat_map(float(row["onset_beat"])))
+        measure_index = bisect_right(starts, position + 1e-6) - 1
+        if measure_index < 0:
+            raise ValueError("Prediction precedes the first measure.")
+        offset = float(top_part.quarter_map(position)) - float(top_part.quarter_map(starts[measure_index]))
+        events.append({**row, "measure_index": measure_index, "offset_quarter": max(0, offset)})
+    count = annotate_musicxml(args.score_path, xml_out, events)
+    print(f"Annotated MusicXML saved: {xml_out} ({count} labels)", flush=True)
 except Exception as e:
-    print(f"Warning: could not write annotated MusicXML ({e}). CSV is still valid.", file=sys.stderr)
+    print(f"ERROR: could not write annotated MusicXML ({e}). CSV saved for diagnosis.", file=sys.stderr)
+    sys.exit(1)
 
 print("Done.", flush=True)

@@ -71,12 +71,15 @@
             </select>
           </label>
           <button id="analyseBtn" type="button">🔍 ChordGNN Analysis</button>
+          <button id="exportAnalysisBtn" type="button" disabled>Export annotated MusicXML</button>
         </div>
         <div id="playheadBar" title="Click to seek">
           <div id="playheadFill"></div>
           <span id="playheadTime"></span>
         </div>
-        <div id="scoreContainer"></div>
+        <div id="scoreViewport" tabindex="0" role="region" aria-label="Scrollable sheet music">
+          <div id="scoreContainer"></div>
+        </div>
         <div id="analysisSection" hidden>
           <h3>Harmonic Analysis</h3>
           <div id="analysisResult"></div>

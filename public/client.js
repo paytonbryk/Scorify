@@ -102,13 +102,20 @@ async function loadScoreList() {
 let scoreDisplay = null
 let scoreCursorKey = null
 let playbackSpeed = 1
+let annotatedScoreXML = null
+let scoreLoadVersion = 0
 let currentScore = null  // { filename, name, scoreUrl }
 
 async function openScore(score) {
   currentScore = score
+  const version = ++scoreLoadVersion
+  annotatedScoreXML = null
+  document.getElementById("exportAnalysisBtn").disabled = true
   stopPlayback()
   currentComposition = null
+  scoreDisplay?.clear()
   scoreDisplay = null
+  scoreContainer.innerHTML = ""
   viewerSection.hidden = false
   analysisSection.hidden = true
   analysisResult.textContent = ""
@@ -125,22 +132,10 @@ async function openScore(score) {
       headers: { Authorization: `Bearer ${authToken}` }
     }).then(r => r.text())
 
-    // Parse for playback
+    if (version !== scoreLoadVersion) return
     currentComposition = parseMusicXML(xml)
-
-    // Render with OSMD
-    scoreContainer.innerHTML = ""
-    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
-      autoResize: true,
-      backend: "svg",
-      drawTitle: true,
-      drawComposer: true,
-      drawingParameters: "default",
-      cursorsOptions: [{ type: 1, color: "#c4701a", alpha: 0.9, follow: false }]
-    })
-    await osmd.load(xml)
-    await osmd.render()
-    scoreDisplay = osmd
+    await renderMusicXML(xml, version)
+    if (version !== scoreLoadVersion) return
     updatePlayhead(0)
 
     setStatus(viewerStatus, "Ready. Press Play to hear it.")
@@ -148,6 +143,21 @@ async function openScore(score) {
     console.error("Load error:", err.message, err.stack)
     setStatus(viewerStatus, `Error loading score: ${err.message}`, true)
   }
+}
+
+// Load before replacing the current drawing, so a failed render can be retried.
+async function renderMusicXML(xml, version = scoreLoadVersion) {
+  const osmd = scoreDisplay || new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
+    autoResize: true, backend: "svg", drawTitle: true, drawComposer: true,
+    drawingParameters: "default",
+    cursorsOptions: [{ type: 1, color: "#c4701a", alpha: 0.9, follow: false }]
+  })
+  await osmd.load(xml)
+  if (version !== scoreLoadVersion) return
+  scoreDisplay = osmd
+  osmd.render()
+  scoreCursorKey = null
+  document.getElementById("scoreViewport").scrollTop = 0
 }
 
 // ── Play / Stop ───────────────────────────────────────────────────────────
@@ -309,6 +319,14 @@ function updateScoreCursor(beat) {
     scoreDisplay.Sheet, sourceTime
   )
   scoreDisplay.cursor.show()
+  // Scroll only the score viewport; never move the surrounding page.
+  const viewport = document.getElementById("scoreViewport")
+  const line = scoreDisplay.cursor.cursorElement.getBoundingClientRect()
+  const box = viewport.getBoundingClientRect()
+  if (line.top < box.top + 24 || line.bottom > box.bottom - 24) {
+    viewport.scrollTop += line.top - box.top - Math.max(24, (viewport.clientHeight - line.height) / 2)
+  }
+  if (line.left < box.left || line.right > box.right) viewport.scrollLeft += line.left - box.left - 24
 }
 
 function startPlayhead() {
@@ -371,50 +389,59 @@ document.getElementById("playbackSpeed").addEventListener("change", e => {
 // ── ChordGNN analysis ─────────────────────────────────────────────────────
 document.getElementById("analyseBtn").addEventListener("click", async () => {
   if (!currentScore) return setStatus(viewerStatus, "Open a score first.", true)
-  setStatus(viewerStatus, "Submitting to ChordGNN… (may take 1–2 min)")
-  document.getElementById("analyseBtn").disabled = true
-
-  const res = await apiFetch("/api/analyze", "POST", { filename: currentScore.filename })
-  document.getElementById("analyseBtn").disabled = false
-
-  if (res.error) return setStatus(viewerStatus, res.error, true)
-
-  // Fetch the annotated analysis XML and display Roman numerals
+  const score = currentScore
+  const version = scoreLoadVersion
+  const button = document.getElementById("analyseBtn")
+  button.disabled = true
+  setStatus(viewerStatus, "Analysing harmony… (may take 1–5 min)")
   try {
-    const xml = await fetch(res.analysisUrl, {
+    const res = await apiFetch("/api/analyze", "POST", { filename: score.filename })
+    if (version !== scoreLoadVersion) return
+    if (res.error) throw new Error(res.error)
+    const response = await fetch(res.analysisUrl, {
       headers: { Authorization: `Bearer ${authToken}` }
-    }).then(r => r.text())
-    displayAnalysis(xml)
-    analysisSection.hidden = false
-    setStatus(viewerStatus, "Analysis complete.")
+    })
+    if (!response.ok) throw new Error("Could not fetch the annotated score.")
+    const xml = await response.text()
+    if (version !== scoreLoadVersion) return
+    await displayAnalysis(xml, version)
   } catch (err) {
-    setStatus(viewerStatus, "Analysis done but could not fetch result.", true)
+    if (version === scoreLoadVersion) setStatus(viewerStatus, `Analysis failed: ${err.message}`, true)
+  } finally {
+    button.disabled = false
   }
 })
 
-// Extract and display Roman numeral annotations from ChordGNN output XML
-function displayAnalysis(xmlText) {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(xmlText, "application/xml")
-  // ChordGNN adds <harmony> elements with <kind> and Roman numeral text
-  const harmonies = [...doc.querySelectorAll("harmony")]
-  if (!harmonies.length) {
-    analysisResult.textContent = "No harmonic annotations found in result."
-    return
+async function displayAnalysis(xmlText, version = scoreLoadVersion) {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml")
+  if (doc.querySelector("parsererror")) throw new Error("The analysis worker did not return valid MusicXML.")
+  const annotations = doc.querySelectorAll('direction[id^="scorify-analysis-"]')
+  if (!annotations.length) {
+    throw new Error("No timed harmonic annotations were returned. Update the analysis worker and run analysis again.")
   }
-  // Build a table of measure → Roman numeral
-  const rows = harmonies.map(h => {
-    const measure = h.closest("measure")?.getAttribute("number") || "?"
-    const root   = h.querySelector("root > root-step")?.textContent || ""
-    const kind   = h.querySelector("kind")?.textContent || ""
-    // ChordGNN stores its RNA in a <function> or text node; grab whatever text is there
-    const text   = h.querySelector("function")?.textContent
-                || h.querySelector("kind")?.getAttribute("text")
-                || `${root} ${kind}`
-    return `  m.${measure.padStart(3)}: ${text}`
-  })
-  analysisResult.textContent = rows.join("\n")
+  const composition = parseMusicXML(xmlText)
+  stopPlayback()
+  await renderMusicXML(xmlText, version)
+  if (version !== scoreLoadVersion) return
+  currentComposition = composition
+  annotatedScoreXML = xmlText
+  document.getElementById("exportAnalysisBtn").disabled = false
+  analysisSection.hidden = true
+  updatePlayhead(0)
+  setStatus(viewerStatus, `Analysis complete: ${annotations.length} harmonic labels added above the top staff. Ready to export.`)
 }
+
+document.getElementById("exportAnalysisBtn").addEventListener("click", () => {
+  if (!annotatedScoreXML || !currentScore) return
+  const url = URL.createObjectURL(new Blob([annotatedScoreXML], { type: "application/vnd.recordare.musicxml+xml" }))
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `${currentScore.name.replace(/\.(musicxml|xml)$/i, "")}-analysis.musicxml`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+})
 
 // ── MusicXML → Composition ────────────────────────────────────────────────
 // Adapted from maia_vex.js (professor's parser) using JavaScript array functions.

@@ -175,8 +175,17 @@ button.secondary:hover { background: #E8C57A; }
 .speed-control select { font: inherit; padding: 6px; border: 1px solid #E8C57A; background: #fff; color: #2C1810; }
 #analyseBtn { background: #2C1810; border-color: #2C1810; }
 #analyseBtn:hover { background: #8B3A0F; border-color: #8B3A0F; }
-#scoreContainer { width: 100%; background: #fff; border: 1px solid #E8C57A; padding: 12px; min-height: 200px; overflow-x: auto; }
-#scoreContainer svg { width: 100%; height: auto; }
+#scoreViewport {
+  height: clamp(320px, 65vh, 680px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid #E8C57A;
+  background: #fff;
+}
+#scoreContainer { width: 100%; min-height: 100%; position: relative; }
+/* Keep SVG and OSMD's cursor in the same renderer-controlled coordinate system. */
+#scoreContainer svg { display: block; max-width: none; }
 
 /* ── Analysis ── */
 #analysisSection { margin-top: 20px; border-top: 1px solid #E8C57A; padding-top: 16px; }

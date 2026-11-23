@@ -1,5 +1,25 @@
 # Woodforde Setup — Scorify 2nd-server
 
+## Deploying in-score harmonic annotations
+
+The analysis worker must use the updated `run_analysis.py` and its companion
+`annotate_musicxml.py`. Copy both files from this repository into the directory
+specified by `CHORDGNN_DIR`, alongside the existing checkpoint directory. Updating
+only the web app does not update this worker code. The poller launches the Python
+wrapper for each job, so subsequent jobs use the new files without a poller restart.
+
+Run a new analysis after updating the worker. The wrapper now uses Partitura's beat
+and quarter maps to place Roman-numeral text directions at their predicted times,
+on staff 1 of the first part. The browser renders that annotated score and exports
+the same MusicXML through **Export annotated MusicXML**. Original uploads are kept;
+older results with untimed `<harmony>` elements need to be regenerated.
+
+Local annotation checks (no model/checkpoint required):
+
+```bash
+python3 -m unittest discover -s test -p 'test_*.py'
+```
+
 Do this once. After that just `tmux attach -t scorify` to check on it.
 
 ## 1. Connect to woodforde

@@ -90,6 +90,33 @@ async function main() {
         })
         assert.deepEqual(cursor, { first: 0, withinMeasure: 0.25, third: 2, repeated: 0, visible: true })
         console.log('PASS: actual OSMD cursor follows source measures and repeat jumps')
+        for (const width of [1200, 700]) {
+          await page.setViewportSize({ width, height: 900 })
+          await page.evaluate(() => { scoreDisplay.render(); scoreCursorKey = null })
+          const geometry = await page.evaluate(() => {
+            const scrollY = window.scrollY
+            const viewport = document.getElementById('scoreViewport')
+            const positions = []
+            const visited = new Set()
+            for (const measure of currentComposition.measureTimeline) {
+              if (visited.has(measure.measureIndex)) continue
+              visited.add(measure.measureIndex)
+              updateScoreCursor(measure.ontime)
+              const line = scoreDisplay.cursor.cursorElement.getBoundingClientRect()
+              const notes = scoreDisplay.cursor.GNotesUnderCursor().map(n => n.getSVGGElement()?.getBoundingClientRect()).filter(Boolean)
+              if (notes.length) positions.push({ measure: measure.measureIndex,
+                topGap: line.top - Math.min(...notes.map(n => n.top + n.height / 2)),
+                bottomGap: Math.max(...notes.map(n => n.top + n.height / 2)) - line.bottom })
+            }
+            return { positions, pageMoved: window.scrollY !== scrollY, height: viewport.clientHeight,
+              scrollHeight: viewport.scrollHeight, scrollTop: viewport.scrollTop }
+          })
+          assert.equal(geometry.pageMoved, false)
+          assert.ok(geometry.scrollHeight > geometry.height)
+          assert.ok(geometry.scrollTop > 0)
+          assert.ok(geometry.positions.every(p => p.topGap < 30 && p.bottomGap < 30), JSON.stringify(geometry.positions))
+          console.log(`PASS: cursor stays aligned across ${geometry.positions.length} measures at ${width}px; only score viewport scrolls`)
+        }
       }
     } else {
       await page.evaluate(score => { currentComposition = score }, voices)
@@ -164,6 +191,25 @@ async function main() {
     assert.ok(rendered.peak > 0 && rendered.peak < 0.99)
     assert.equal(rendered.clippedSamples, 0)
     console.log('PASS: offline audio render (up to 30 seconds)', rendered)
+    if (process.env.ANNOTATED_XML && process.env.OSMD_JS) {
+      const annotated = fs.readFileSync(process.env.ANNOTATED_XML, 'utf8')
+      await page.route('http://scorify.test/api/analyze', route => route.fulfill({ json: { analysisUrl: '/annotated.musicxml' } }))
+      await page.route('http://scorify.test/annotated.musicxml', route => route.fulfill({ contentType: 'application/xml', body: annotated }))
+      await page.evaluate(() => { currentScore = { filename: 'test.xml', name: 'Test score.xml' } })
+      const before = await page.evaluate(() => JSON.stringify(currentComposition.notes))
+      await page.click('#analyseBtn')
+      await page.waitForFunction(() => viewerStatus.textContent.startsWith('Analysis complete:'))
+      assert.equal(await page.evaluate(() => JSON.stringify(currentComposition.notes)), before)
+      assert.ok((await page.locator('#scoreContainer').textContent()).includes('C: V7'))
+      const downloadPromise = page.waitForEvent('download')
+      await page.click('#exportAnalysisBtn')
+      const download = await downloadPromise
+      assert.equal(download.suggestedFilename(), 'Test score-analysis.musicxml')
+      assert.equal(fs.readFileSync(await download.path(), 'utf8'), annotated)
+      await page.locator('#scoreViewport').scrollIntoViewIfNeeded()
+      await page.screenshot({ path: '/tmp/scorify-annotated-viewer.png' })
+      console.log('PASS: analysis renders in score, preserves notes, and exports matching MusicXML')
+    }
   } finally { await browser.close() }
 }
 main().catch(error => { console.error(error); process.exitCode = 1 })
