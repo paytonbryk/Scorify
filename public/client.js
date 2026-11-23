@@ -311,13 +311,14 @@ function parseMusicXML(xmlText) {
         if (!isChord) measureCursor += durationBeats
 
         const durationType = text(note, "type") || "quarter"
+        const dotCount = note.querySelectorAll("dot").length
 
         if (isRest) {
           rests.push({
             ontime, offtime, duration: durationBeats,
             barOn: 0, barOff: 0, beatOn: ontime, beatOff: offtime,
             staffNo, voiceNo,
-            durationType
+            durationType, dotCount
           })
         } else {
           // Pitch: e.g. C4, F#5
@@ -332,7 +333,7 @@ function parseMusicXML(xmlText) {
             barOn: 0, barOff: 0, beatOn: ontime, beatOff: offtime,
             staffNo, voiceNo,
             pitch,
-            durationType
+            durationType, dotCount
           })
         }
       })
@@ -420,28 +421,47 @@ function renderScore(composition) {
   // Merge and sort all events
   const allEvents = [...staff1Notes, ...staff1Rests].sort((a, b) => a.ontime - b.ontime)
 
-  // Convert to VexFlow notes using array map
-  const vfNotes = allEvents.map(evt => {
+  // Convert to VexFlow notes using array map — only first measure
+  const beatsPerMeasure = ts ? (ts.topNo * (4 / ts.bottomNo)) : 4
+  const firstMeasureEvents = allEvents.filter(evt => evt.ontime < beatsPerMeasure)
+
+  const vfNotes = firstMeasureEvents.map(evt => {
     const dur = durationTypeToVF(evt.durationType)
+    const dots = evt.dotCount || 0
+    // Build dot suffix for VexFlow: "q" → "qd" (one dot), "qdd" (two)
+    const dotSuffix = "d".repeat(dots)
+    let vfNote
     if (evt.pitch) {
-      return new VF.StaveNote({ clef: "treble", keys: [pitchToVFKey(evt.pitch)], duration: dur })
+      vfNote = new VF.StaveNote({ clef: "treble", keys: [pitchToVFKey(evt.pitch)], duration: dur + dotSuffix })
     } else {
-      return new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: dur + "r" })
+      vfNote = new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: dur + dotSuffix + "r" })
     }
+    // Add dot modifiers explicitly
+    for (let d = 0; d < dots; d++) {
+      vfNote.addDotToAll ? vfNote.addDotToAll() : vfNote.addModifier(new VF.Dot(), 0)
+    }
+    return vfNote
   })
 
-  if (!vfNotes.length) return
+  if (!vfNotes.length) {
+    console.warn("VexFlow: no notes to render for first measure")
+    return
+  }
+
+  console.log("VexFlow: rendering", vfNotes.length, "notes/rests in first measure")
 
   try {
-    const voice = new VF.Voice({ num_beats: ts.topNo, beat_value: ts.bottomNo })
+    const numBeats = ts ? ts.topNo : 4
+    const beatValue = ts ? ts.bottomNo : 4
+    const voice = new VF.Voice({ num_beats: numBeats, beat_value: beatValue })
       .setMode(VF.Voice.Mode.SOFT)
-    voice.addTickables(vfNotes.slice(0, ts.topNo * 4))  // first measure only for safety
+    voice.addTickables(vfNotes)
 
-    new VF.Formatter().joinVoices([voice]).format([voice], W - 60)
+    new VF.Formatter().joinVoices([voice]).format([voice], W - 80)
     voice.draw(ctx, stave)
+    console.log("VexFlow: render complete")
   } catch (e) {
-    // VexFlow formatting errors are non-fatal; just show the stave
-    console.warn("VexFlow format warning:", e.message)
+    console.error("VexFlow render error:", e.message, e)
   }
 }
 
