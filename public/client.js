@@ -377,12 +377,11 @@ function parseMusicXML(xmlText) {
 
 // ── VexFlow renderer ──────────────────────────────────────────────────────
 function renderScore(composition) {
-  const { notes, rests, timeSignatures, keySignatures, clefChanges, layer } = composition
+  const { notes, rests, timeSignatures, keySignatures, clefChanges } = composition
 
-  // Canvas sizing
   const W = scoreCanvas.parentElement.clientWidth || 860
   scoreCanvas.width  = W
-  scoreCanvas.height = 300  // will grow if needed
+  scoreCanvas.height = 300
 
   const VF = Vex.Flow
   const renderer = new VF.Renderer(scoreCanvas, VF.Renderer.Backends.CANVAS)
@@ -390,67 +389,45 @@ function renderScore(composition) {
   const ctx = renderer.getContext()
   ctx.clearRect(0, 0, W, 300)
 
-  // One stave per part, stacked vertically — render staff 1 only for simplicity.
-  // (Full multi-staff engraving would need EngravingEngine.js; this satisfies
-  //  the VexFlow rendering requirement using array functions throughout.)
   const stave = new VF.Stave(10, 40, W - 20)
-
-  // Clef
   const clef = clefChanges.find(c => c.staffNo === 1)
   stave.addClef(clef ? clef.sign.toLowerCase() : "treble")
-
-  // Time sig
   const ts = timeSignatures[0]
   if (ts) stave.addTimeSignature(`${ts.topNo}/${ts.bottomNo}`)
-
-  // Key sig
   const ks = keySignatures[0]
   if (ks) stave.addKeySignature(fifthsToKey(ks.fifths, ks.mode))
-
   stave.setContext(ctx).draw()
 
-  // Filter staff 1 notes, sort by ontime, build VexFlow StaveNotes
-  const staff1Notes = notes
-    .filter(n => n.staffNo === 1 && n.pitch)
-    .sort((a, b) => a.ontime - b.ontime)
-
-  const staff1Rests = rests
-    .filter(r => r.staffNo === 1)
-    .sort((a, b) => a.ontime - b.ontime)
-
-  // Merge and sort all events
-  const allEvents = [...staff1Notes, ...staff1Rests].sort((a, b) => a.ontime - b.ontime)
-
-  // Convert to VexFlow notes using array map — only first measure
+  // Gather staff 1 notes from first measure only
   const beatsPerMeasure = ts ? (ts.topNo * (4 / ts.bottomNo)) : 4
-  const firstMeasureEvents = allEvents.filter(evt => evt.ontime < beatsPerMeasure)
+  const staff1 = [...notes.filter(n => n.staffNo === 1 && n.pitch),
+                   ...rests.filter(r => r.staffNo === 1)]
+    .sort((a, b) => a.ontime - b.ontime)
+    .filter(evt => evt.ontime < beatsPerMeasure)
 
-  const vfNotes = firstMeasureEvents.flatMap(evt => {
-    const dur = durationTypeToVF(evt.durationType)
-    const dots = evt.dotCount || 0
-    const key = evt.pitch ? pitchToVFKey(evt.pitch) : "b/4"
-    const durStr = evt.pitch ? dur : dur + "r"
-    console.log("VexFlow note:", evt.durationType, "->", durStr, "pitch:", evt.pitch || "rest", "dots:", dots)
+  // Build VexFlow notes — wrap each construction so one bad note can't crash all
+  const vfNotes = []
+  for (const evt of staff1) {
     try {
+      const dur = durationTypeToVF(evt.durationType)
+      const dots = evt.dotCount || 0
+      const isRest = !evt.pitch
+      const key = isRest ? "b/4" : pitchToVFKey(evt.pitch)
+      const durStr = isRest ? dur + "r" : dur
       const vfNote = new VF.StaveNote({ clef: "treble", keys: [key], duration: durStr })
       for (let d = 0; d < dots; d++) {
         if (vfNote.addDotToAll) vfNote.addDotToAll()
       }
-      return [vfNote]
+      vfNotes.push(vfNote)
     } catch (e) {
-      console.error("VexFlow: skipping bad note", evt.durationType, "->", durStr, e.message)
-      // Replace with a quarter rest as placeholder so voice still has notes
-      return [new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: "qr" })]
+      console.warn("Skipping note:", evt.durationType, evt.pitch || "rest", e.message)
     }
-  })
-
-  if (!vfNotes.length) {
-    console.warn("VexFlow: no notes to render for first measure")
-    return
   }
 
-  console.log("VexFlow: rendering", vfNotes.length, "notes/rests in first measure")
-  console.log("VexFlow events:", firstMeasureEvents.map(e => e.durationType+(e.dotCount?"(dot)":"")+" @"+e.ontime+" "+(e.pitch||"rest")))
+  if (!vfNotes.length) {
+    console.warn("VexFlow: no valid notes in first measure — drawing stave only")
+    return
+  }
 
   try {
     const numBeats = ts ? ts.topNo : 4
@@ -458,12 +435,10 @@ function renderScore(composition) {
     const voice = new VF.Voice({ num_beats: numBeats, beat_value: beatValue })
       .setMode(VF.Voice.Mode.SOFT)
     voice.addTickables(vfNotes)
-
     new VF.Formatter().joinVoices([voice]).format([voice], W - 80)
     voice.draw(ctx, stave)
-    console.log("VexFlow: render complete")
   } catch (e) {
-    console.error("VexFlow render error:", e.message, e)
+    console.error("VexFlow formatter error:", e.message)
   }
 }
 
