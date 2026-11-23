@@ -98,6 +98,45 @@ async function loadScoreList() {
   })
 }
 
+
+// ── Demo scores ───────────────────────────────────────────────────────────
+document.querySelectorAll(".demo-score").forEach(el => {
+  el.addEventListener("click", () => loadDemoScore(el.dataset.path, el.textContent))
+})
+
+async function loadDemoScore(path, name) {
+  const version = ++scoreLoadVersion
+  annotatedScoreXML = null
+  document.getElementById("exportAnalysisBtn").disabled = true
+  stopPlayback()
+  currentComposition = null
+  scoreDisplay?.clear()
+  scoreDisplay = null
+  scoreContainer.innerHTML = ""
+  viewerSection.hidden = false
+  analysisSection.hidden = true
+  analysisResult.textContent = ""
+  scoreTitle.textContent = name
+  currentScore = { name, filename: null, scoreUrl: null }
+  setStatus(viewerStatus, "Loading…")
+
+  document.querySelectorAll(".demo-score").forEach(el => {
+    el.classList.toggle("active", el.dataset.path === path)
+  })
+
+  try {
+    const xml = await fetch(path).then(r => r.text())
+    if (version !== scoreLoadVersion) return
+    currentComposition = parseMusicXML(xml)
+    await renderMusicXML(xml, version)
+    if (version !== scoreLoadVersion) return
+    updatePlayhead(0)
+    setStatus(viewerStatus, "Ready. Press Play to hear it.")
+  } catch (err) {
+    setStatus(viewerStatus, `Error loading demo: ${err.message}`, true)
+  }
+}
+
 // ── Open & render a score ─────────────────────────────────────────────────
 let scoreDisplay = null
 let scoreCursorKey = null
