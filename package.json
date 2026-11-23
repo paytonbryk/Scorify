@@ -7,10 +7,10 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "@fastify/multipart": "5.4.0",
+    "@fastify/multipart": "6.0.1",
     "@fastify/static": "5.0.2",
-    "@fastify/view": "5.5.0",
-    "@fastify/formbody": "5.4.0",
+    "@fastify/view": "7.4.1",
+    "@fastify/formbody": "6.0.1",
     "fastify": "3.21.1",
     "handlebars": "4.7.7",
     "nodemailer": "6.6.3",
