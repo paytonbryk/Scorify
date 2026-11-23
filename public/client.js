@@ -169,21 +169,24 @@ async function playScore() {
     }
   })
 
-  // Build one PolySynth per staff with piano-like tone
-  const reverb = new Tone.Reverb({ decay: 1.8, wet: 0.25 }).toMaster()
+  // Build one PolySynth per staff with piano-like tone (Tone 11 API)
+  const reverb = new Tone.Freeverb(0.4, 3000).toMaster()
   const synths = new Map()
   notes.forEach(note => {
     if (!note.pitch) return
     if (!synths.has(note.staffNo)) {
-      const synth = new Tone.PolySynth(16, Tone.Synth, {
+      const synth = new Tone.PolySynth(16, Tone.Synth)
+      synth.set({
         oscillator: { type: "triangle" },
-        envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 1.2 }
-      }).connect(reverb)
-      synth.volume.value = -12
+        envelope: { attack: 0.02, decay: 0.5, sustain: 0.3, release: 1.0 }
+      })
+      synth.connect(reverb)
+      synth.volume.value = -10
       synths.set(note.staffNo, synth)
     }
   })
 
+  console.log('Playback: notes to schedule:', notes.filter(n=>n.pitch).length, 'pitched notes')
   const startBeat = Math.min(0, ...notes.map(n => n.ontime))
 
   // Schedule every note using Tone.Transport.schedule()
