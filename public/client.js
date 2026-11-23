@@ -425,20 +425,23 @@ function renderScore(composition) {
   const beatsPerMeasure = ts ? (ts.topNo * (4 / ts.bottomNo)) : 4
   const firstMeasureEvents = allEvents.filter(evt => evt.ontime < beatsPerMeasure)
 
-  const vfNotes = firstMeasureEvents.map(evt => {
+  const vfNotes = firstMeasureEvents.flatMap(evt => {
     const dur = durationTypeToVF(evt.durationType)
     const dots = evt.dotCount || 0
-    let vfNote
-    if (evt.pitch) {
-      vfNote = new VF.StaveNote({ clef: "treble", keys: [pitchToVFKey(evt.pitch)], duration: dur })
-    } else {
-      vfNote = new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: dur + "r" })
+    const key = evt.pitch ? pitchToVFKey(evt.pitch) : "b/4"
+    const durStr = evt.pitch ? dur : dur + "r"
+    console.log("VexFlow note:", evt.durationType, "->", durStr, "pitch:", evt.pitch || "rest", "dots:", dots)
+    try {
+      const vfNote = new VF.StaveNote({ clef: "treble", keys: [key], duration: durStr })
+      for (let d = 0; d < dots; d++) {
+        if (vfNote.addDotToAll) vfNote.addDotToAll()
+      }
+      return [vfNote]
+    } catch (e) {
+      console.error("VexFlow: skipping bad note", evt.durationType, "->", durStr, e.message)
+      // Replace with a quarter rest as placeholder so voice still has notes
+      return [new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: "qr" })]
     }
-    // Add dot modifiers — in VexFlow 1.x dots are modifiers only, NOT part of duration string
-    for (let d = 0; d < dots; d++) {
-      if (vfNote.addDotToAll) vfNote.addDotToAll()
-    }
-    return vfNote
   })
 
   if (!vfNotes.length) {
