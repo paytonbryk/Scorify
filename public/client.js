@@ -445,7 +445,7 @@ document.getElementById("analyseBtn").addEventListener("click", async () => {
         body: form
       }).then(r => r.json())
       if (up.error) throw new Error(up.error)
-      score = { ...score, filename: up.name }
+      score = { ...score, filename: up.filename }
       currentScore = score
     }
     const res = await apiFetch("/api/analyze", "POST", { filename: score.filename })
