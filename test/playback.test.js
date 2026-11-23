@@ -36,7 +36,7 @@ function setup(resume = async () => {}) {
     document: { getElementById: element, addEventListener() {} },
     requestAnimationFrame() { return 1 }, cancelAnimationFrame() {},
     Tone: { context: { resume }, Transport: transport,
-      Freeverb: AudioNode, Volume: AudioNode, PolySynth: AudioNode, Synth: AudioNode }
+      Limiter: AudioNode, Freeverb: AudioNode, Volume: AudioNode, PolySynth: AudioNode, Synth: AudioNode }
   })
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../public/client.js'), 'utf8'), context)
   vm.runInContext(`currentComposition = {

@@ -174,13 +174,16 @@ async function startPlayback(fromBeat = null) {
 
   const { notes, tempi } = currentComposition
 
+  const validNotes = notes.filter(n => n.pitch && Number.isFinite(n.ontime) && Number.isFinite(n.offtime) && n.offtime > n.ontime)
+  if (!validNotes.length) throw new Error("This score has no playable pitched notes.")
+  playStartBeat = Number.isFinite(fromBeat) ? Math.max(0, fromBeat) : 0
   const sortedTempi = [...tempi].sort((a, b) => a.ontime - b.ontime)
-  transport.bpm.value = sortedTempi[0]?.bpm || 120
+  transport.bpm.value = sortedTempi.filter(t => t.ontime <= playStartBeat).at(-1)?.bpm || 120
   transport.timeSignature = 4
 
   sortedTempi.forEach(t => {
-    if (t.ontime > 0 && !isNaN(t.ontime) && !isNaN(t.bpm)) {
-      const tickVal = Math.round(t.ontime * transport.PPQ)
+    if (t.ontime > playStartBeat && Number.isFinite(t.ontime) && t.bpm > 0) {
+      const tickVal = Math.round((t.ontime - playStartBeat) * transport.PPQ)
       if (!isNaN(tickVal)) {
         const id = transport.schedule(time => {
           transport.bpm.setValueAtTime(t.bpm, time)
@@ -190,34 +193,12 @@ async function startPlayback(fromBeat = null) {
     }
   })
 
-  // Piano-like triangle synth with a short attack and a decaying envelope.
-  const reverb = new Tone.Freeverb(0.5, 2500).toMaster()
-  playbackNodes.push(reverb)
-  const vol = new Tone.Volume(-6).connect(reverb)
-  playbackNodes.push(vol)
-  const synths = new Map()
-  notes.forEach(note => {
-    if (!note.pitch) return
-    if (!synths.has(note.staffNo)) {
-      const synth = new Tone.PolySynth(16, Tone.Synth)
-      playbackNodes.push(synth)
-      synth.set({
-        oscillator: { type: "triangle8" },
-        envelope: { attack: 0.005, decay: 0.8, sustain: 0.1, release: 1.4 }
-      })
-      synth.connect(vol)
-      synths.set(note.staffNo, synth)
-    }
-  })
+  const synths = createPlaybackSynths(notes)
 
-  const validNotes = notes.filter(n => n.pitch && Number.isFinite(n.ontime) && Number.isFinite(n.offtime) && n.offtime > n.ontime)
-  if (!validNotes.length) throw new Error("This score has no playable pitched notes.")
-  playStartBeat = Number.isFinite(fromBeat) ? fromBeat : validNotes.reduce((m, n) => Math.min(m, n.ontime), 0)
-  const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), 0)
+  const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), currentComposition.durationBeats || 0)
   playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
-  const bpm = transport.bpm.value || 120
   validNotes.forEach(note => {
     if (!note.pitch || note.offtime <= playStartBeat) return
     if (isNaN(note.ontime) || isNaN(note.offtime)) return
@@ -226,7 +207,7 @@ async function startPlayback(fromBeat = null) {
     const noteStart = Math.max(note.ontime, playStartBeat)
     const onTickVal  = Math.round((noteStart - playStartBeat) * transport.PPQ)
     // Duration must be in seconds inside a Transport callback, not ticks
-    const durSecs = Math.max(0.05, (note.offtime - noteStart) * 60 / bpm)
+    const durSecs = Math.max(0.01, playbackSeconds(noteStart, note.offtime, sortedTempi))
     if (isNaN(onTickVal) || isNaN(durSecs)) return
     const onTick  = `${onTickVal}i`
     const id = transport.schedule(time => {
@@ -244,6 +225,46 @@ async function startPlayback(fromBeat = null) {
   startPlayhead()
 }
 
+function createPlaybackSynths(notes) {
+  // Piano-like triangle synth with a short attack and a decaying envelope.
+  const limiter = new Tone.Limiter(-3).toMaster()
+  playbackNodes.push(limiter)
+  const reverb = new Tone.Freeverb(0.5, 2500).connect(limiter)
+  playbackNodes.push(reverb)
+  const vol = new Tone.Volume(-18).connect(reverb)
+  playbackNodes.push(vol)
+  const synths = new Map()
+  notes.forEach(note => {
+    if (!note.pitch) return
+    if (!synths.has(note.staffNo)) {
+      const synth = new Tone.PolySynth(16, Tone.Synth)
+      playbackNodes.push(synth)
+      synth.set({
+        volume: -12,
+        oscillator: { type: "triangle8" },
+        envelope: { attack: 0.005, decay: 0.8, sustain: 0.1, release: 1.4 }
+      })
+      synth.connect(vol)
+      synths.set(note.staffNo, synth)
+    }
+  })
+
+  return synths
+}
+
+function playbackSeconds(start, end, tempi) {
+  let bpm = 120, cursor = start, seconds = 0
+  for (const tempo of tempi) {
+    if (tempo.ontime <= start) bpm = tempo.bpm
+    else if (tempo.ontime < end) {
+      seconds += (tempo.ontime - cursor) * 60 / bpm
+      cursor = tempo.ontime
+      bpm = tempo.bpm
+    }
+  }
+  return seconds + (end - cursor) * 60 / bpm
+}
+
 function startPlayhead() {
   const bar  = document.getElementById("playheadBar")
   const fill = document.getElementById("playheadFill")
@@ -255,9 +276,9 @@ function startPlayhead() {
     const beats = transport.ticks / transport.PPQ
     const pct = playDurationBeats > 0 ? Math.min(beats / playDurationBeats, 1) : 0
     fill.style.width = (pct * 100) + "%"
-    const bpm = transport.bpm.value
-    const totalSec = (playDurationBeats / bpm) * 60
-    const curSec = (beats / bpm) * 60
+    const tempi = [...currentComposition.tempi].sort((a, b) => a.ontime - b.ontime)
+    const totalSec = playbackSeconds(playStartBeat, playStartBeat + playDurationBeats, tempi)
+    const curSec = playbackSeconds(playStartBeat, playStartBeat + beats, tempi)
     time.textContent = `${fmt(curSec)} / ${fmt(totalSec)}`
     playheadRAF = requestAnimationFrame(tick)
   }
@@ -349,155 +370,208 @@ function displayAnalysis(xmlText) {
 // Adapted from maia_vex.js (professor's parser) using JavaScript array functions.
 
 function parseMusicXML(xmlText) {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(xmlText, "application/xml")
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml")
+  if (doc.querySelector("parsererror")) throw new Error("Invalid MusicXML.")
+  if (doc.documentElement.localName !== "score-partwise") {
+    throw new Error("Playback requires partwise MusicXML.")
+  }
+  const text = (el, selector) => el.querySelector(selector)?.textContent.trim() || ""
+  const number = (el, selector, fallback = 0) => {
+    const value = text(el, selector)
+    return value && Number.isFinite(Number(value)) ? Number(value) : fallback
+  }
+  const parts = Array.from(doc.querySelectorAll("part"))
+  const layer = []
+  const measures = []
+  const timeSignatures = []
+  const keySignatures = []
+  const clefChanges = []
 
-  // ── Helpers ──────────────────────────────────────────────────────────
-  const text  = (el, sel) => el?.querySelector(sel)?.textContent?.trim() || ""
-  const num   = (el, sel) => parseFloat(text(el, sel)) || 0
-
-  // ── Divisions (ticks per quarter note) — read per-measure as it can change ──
-  // We store a default here; each measure updates it when it has a <divisions> element
-  const defaultDivisions = parseInt(doc.querySelector("divisions")?.textContent || "1")
-
-  // ── Time signatures ───────────────────────────────────────────────────
-  const timeSignatures = [...doc.querySelectorAll("time")].map((ts, i) => ({
-    topNo: num(ts, "beats"),
-    bottomNo: num(ts, "beat-type"),
-    ontime: 0  // simplified: all from beat 0 (extend if needed)
-  }))
-  if (!timeSignatures.length) timeSignatures.push({ topNo: 4, bottomNo: 4, ontime: 0 })
-
-  // ── Key signatures ────────────────────────────────────────────────────
-  const keySignatures = [...doc.querySelectorAll("key")].map(k => ({
-    fifths: num(k, "fifths"),
-    mode: text(k, "mode") || "major",
-    ontime: 0
-  }))
-  if (!keySignatures.length) keySignatures.push({ fifths: 0, mode: "major", ontime: 0 })
-
-  // ── Tempi ─────────────────────────────────────────────────────────────
-  const tempi = [...doc.querySelectorAll("sound[tempo]")].map(s => ({
-    bpm: parseFloat(s.getAttribute("tempo")),
-    ontime: 0
-  })).filter(t => t.bpm > 0)
-  if (!tempi.length) tempi.push({ bpm: 120, ontime: 0 })
-
-  // ── Stave layers ──────────────────────────────────────────────────────
-  const partIds = [...doc.querySelectorAll("part")].map(p => p.getAttribute("id"))
-  const layer = partIds.map((id, i) => ({
-    staffNo: i + 1,
-    partId: id,
-    vexflow: {}
-  }))
-
-  // ── Notes and rests ───────────────────────────────────────────────────
-  // Walk every <part> → <measure> → <note>, tracking cumulative beat position.
-  const notes = []
-  const rests = []
-
-  // Transposition map: concert pitch correction per part index
-  const transposeMap = {}
-  doc.querySelectorAll("part").forEach((part, i) => {
-    const trans = part.querySelector("transpose")
-    transposeMap[i] = trans ? -(parseInt(trans.querySelector("chromatic")?.textContent || "0")) : 0
-  })
-
-  doc.querySelectorAll("part").forEach((part, partIndex) => {
-    const staffNo = partIndex + 1
-    let beatCursor = 0  // quarter-note beats from start of piece
-
-    // Array.from + .forEach uses JS array functions as required
-    let currentDivisions = defaultDivisions
-    Array.from(part.querySelectorAll("measure")).forEach(measure => {
-      // Update divisions if this measure redefines it
-      const divEl = measure.querySelector("attributes > divisions")
-      if (divEl) currentDivisions = parseInt(divEl.textContent) || currentDivisions
-      let measureCursor = beatCursor
-
-      Array.from(measure.querySelectorAll("note")).forEach(note => {
-        const isChord    = !!note.querySelector("chord")
-        const isRest     = !!note.querySelector("rest")
-        const isGrace    = !!note.querySelector("grace")
-        if (isGrace) return  // skip grace notes — they have no <duration>
-        const durationTicks = num(note, "duration")
-        const durationBeats = currentDivisions > 0 ? durationTicks / currentDivisions : 0
-        if (isNaN(durationBeats)) return  // skip malformed notes
-        const voiceNo    = parseInt(text(note, "voice")) || 1
-
-        const ontime  = isChord ? measureCursor - durationBeats : measureCursor
-        const offtime = ontime + durationBeats
-        if (isNaN(ontime) || isNaN(offtime)) return
-
-        if (!isChord) measureCursor += durationBeats
-
-        const durationType = text(note, "type") || "quarter"
-        const dotCount = note.querySelectorAll("dot").length
-
-        if (isRest) {
-          rests.push({
-            ontime, offtime, duration: durationBeats,
-            barOn: 0, barOff: 0, beatOn: ontime, beatOff: offtime,
-            staffNo, voiceNo,
-            durationType, dotCount
-          })
-        } else {
-          // Pitch: e.g. C4, F#5
-          const step    = text(note, "step")
-          const octave  = text(note, "octave")
-          const alter   = num(note, "alter")  // -1=flat, 0=natural, 1=sharp
-          const accidental = alter === 1 ? "#" : alter === -1 ? "b" : ""
-          const rawPitch = step && octave ? `${step}${accidental}${octave}` : null
-          // Transpose to concert pitch if instrument is transposing
-          const semitoneShift = transposeMap[partIndex] || 0
-          const pitch = rawPitch && semitoneShift !== 0
-            ? transposePitch(rawPitch, semitoneShift)
-            : rawPitch
-
-          notes.push({
-            ontime, offtime, duration: durationBeats,
-            barOn: 0, barOff: 0, beatOn: ontime, beatOff: offtime,
-            staffNo, voiceNo,
-            pitch,
-            durationType, dotCount
-          })
+  parts.forEach(part => {
+    let divisions = 1, measureBeats = 4, transpose = 0, bpm = 120
+    const staffIds = new Map()
+    const staffId = local => {
+      if (!staffIds.has(local)) {
+        const id = layer.length + 1
+        staffIds.set(local, id)
+        layer.push({ staffNo: id, partId: part.getAttribute("id"), vexflow: {} })
+      }
+      return staffIds.get(local)
+    }
+    Array.from(part.children).filter(el => el.localName === "measure").forEach((measure, index) => {
+      const data = measures[index] ||= {
+        notes: [], rests: [], tempi: [], duration: 0, forward: false, backward: false,
+        times: null, endingStart: null, endingStop: false,
+        initialBpm: bpm, number: measure.getAttribute("number")
+      }
+      let cursor = 0, extent = 0, lastOnset = 0
+      for (const el of measure.children) {
+        if (el.localName === "attributes") {
+          divisions = number(el, "divisions", divisions)
+          if (!(divisions > 0)) throw new Error("MusicXML divisions must be positive.")
+          const ts = el.querySelector("time")
+          if (ts) {
+            const topNo = text(ts, "beats").split("+").reduce((sum, v) => sum + Number(v), 0)
+            const bottomNo = number(ts, "beat-type", 4)
+            measureBeats = topNo * 4 / bottomNo
+            timeSignatures.push({ topNo, bottomNo, ontime: 0 })
+          }
+          const trans = el.querySelector("transpose")
+          if (trans) transpose = number(trans, "chromatic") + 12 * number(trans, "octave-change")
+          const key = el.querySelector("key")
+          if (key) keySignatures.push({ fifths: number(key, "fifths"), mode: text(key, "mode") || "major", ontime: 0 })
+          el.querySelectorAll("clef").forEach(c => clefChanges.push({
+            sign: text(c, "sign"), line: number(c, "line"), ontime: 0,
+            staffNo: staffId(Number(c.getAttribute("number")) || 1)
+          }))
+        } else if (el.localName === "backup" || el.localName === "forward") {
+          cursor += (el.localName === "backup" ? -1 : 1) * number(el, "duration") / divisions
+          extent = Math.max(extent, cursor)
+        } else if (el.localName === "direction" || el.localName === "sound") {
+          const sound = el.localName === "sound" ? el : el.querySelector("sound[tempo]")
+          const tempo = Number(sound?.getAttribute("tempo"))
+          if (tempo > 0) {
+            bpm = tempo
+            data.tempi.push({ ontime: cursor + number(el, "offset") / divisions, bpm })
+          }
+        } else if (el.localName === "barline") {
+          for (const ending of el.querySelectorAll("ending")) {
+            if (ending.getAttribute("type") === "start") {
+              data.endingStart = ending.getAttribute("number").split(",").map(n => Number(n.trim()))
+            } else data.endingStop = true
+          }
+          for (const repeat of el.querySelectorAll("repeat")) {
+            if (repeat.getAttribute("direction") === "forward") data.forward = true
+            if (repeat.getAttribute("direction") === "backward") {
+              data.backward = true
+              if (repeat.hasAttribute("times")) data.times = Number(repeat.getAttribute("times"))
+            }
+          }
+        } else if (el.localName === "note") {
+          if (el.querySelector("grace")) continue
+          const duration = number(el, "duration") / divisions
+          const chord = !!el.querySelector("chord")
+          const ontime = chord ? lastOnset : cursor
+          if (!chord) { lastOnset = ontime; cursor += duration }
+          extent = Math.max(extent, ontime + duration)
+          if (!(duration > 0)) continue
+          const staffNo = staffId(number(el, "staff", 1))
+          const voiceNo = text(el, "voice") || "1"
+          const note = {
+            ontime, offtime: ontime + duration, duration, staffNo, voiceNo,
+            durationType: text(el, "type") || "quarter", dotCount: el.querySelectorAll("dot").length,
+            tieStart: !!el.querySelector('tie[type="start"]'),
+            tieStop: !!el.querySelector('tie[type="stop"]')
+          }
+          if (el.querySelector("rest")) data.rests.push(note)
+          else {
+            const pitch = el.querySelector("pitch")
+            if (!pitch) continue
+            const step = text(pitch, "step")
+            const octave = number(pitch, "octave")
+            const alter = number(pitch, "alter")
+            const accidental = alter > 0 ? "#".repeat(alter) : "b".repeat(-alter)
+            const written = `${step}${accidental}${octave}`
+            note.pitch = transpose ? transposePitch(written, transpose) : written
+            data.notes.push(note)
+          }
         }
-      })
-
-      // Advance cursor by the measure's worth of beats (top/bottom time sig)
-      const ts = timeSignatures[0]
-      const measureBeats = ts.topNo * (4 / ts.bottomNo)
-      beatCursor += measureBeats
+      }
+      // Voices share a measure; their durations must never be added together.
+      const duration = measure.getAttribute("implicit") === "yes" && extent > 0
+        ? extent : Math.max(measureBeats, extent)
+      data.duration = Math.max(data.duration, duration)
     })
   })
 
-  // ── Page layout (required by Composition schema) ──────────────────────
-  const pageLayout = {
-    pageWidth: 1200, pageHeight: 1700,
-    margins: { left: 70, right: 70, top: 88, bottom: 88 }
-  }
-  const miscXML = { anacrusis: 0 }
-
-  // ── Sequencing (no repeats for now) ──────────────────────────────────
+  // Unfold the score before joining ties, so ties follow the performed order.
   const sequencing = []
+  const repeatPasses = new Map()
+  const repeatStarts = new Map()
+  const openRepeats = []
+  measures.forEach((measure, index) => {
+    if (measure.forward) openRepeats.push(index)
+    if (measure.backward) {
+      repeatStarts.set(index, openRepeats.pop() ?? 0)
+    }
+  })
+  const endings = []
+  let activeEnding = null
+  measures.forEach((measure, index) => {
+    if (measure.endingStart) {
+      activeEnding = { start: index, end: index, passes: measure.endingStart }
+      endings.push(activeEnding)
+    }
+    if (activeEnding) activeEnding.end = index
+    if (measure.endingStop) activeEnding = null
+  })
+  endings.forEach((ending, i) => {
+    ending.repeatEnd = [...repeatStarts.keys()].find(end => end >= ending.start && end <= ending.end)
+    if (ending.repeatEnd === undefined && i > 0 && endings[i - 1].end + 1 === ending.start) {
+      ending.repeatEnd = endings[i - 1].repeatEnd
+    }
+  })
+  let index = 0
+  while (index < measures.length) {
+    if (sequencing.length >= 10000) throw new Error("Repeat expansion exceeds 10,000 measures.")
+    const measure = measures[index]
+    const ending = endings.find(e => e.start === index && e.repeatEnd !== undefined)
+    if (ending && !ending.passes.includes(repeatPasses.get(ending.repeatEnd) || 1)) {
+      index = ending.end + 1
+      continue
+    }
+    sequencing.push(index)
+    if (measure.backward) {
+      const repeatStart = repeatStarts.get(index)
+      const passes = repeatPasses.get(index) || 1
+      const endingPasses = endings.filter(e => e.repeatEnd === index).flatMap(e => e.passes)
+      const times = measure.times ?? Math.max(2, ...endingPasses)
+      if (!Number.isInteger(times) || times < 1 || times > 100) throw new Error("Invalid repeat count.")
+      if (passes < times) {
+        repeatPasses.set(index, passes + 1)
+        // A larger repeat plays any inner repeated sections again.
+        for (const end of repeatPasses.keys()) {
+          if (end >= repeatStart && end < index) repeatPasses.delete(end)
+        }
+        index = repeatStart
+        continue
+      }
+    }
+    index++
+  }
 
-  // ── Clef changes ─────────────────────────────────────────────────────
-  const clefChanges = [...doc.querySelectorAll("clef")].map(c => ({
-    sign: text(c, "sign"),
-    line: num(c, "line"),
-    ontime: 0,
-    staffNo: parseInt(c.getAttribute("number")) || 1
-  }))
-
+  const notes = [], rests = [], tempi = []
+  const pendingTies = new Map()
+  let beat = 0, previousMeasure = -1
+  for (const index of sequencing) {
+    const measure = measures[index]
+    if (index !== previousMeasure + 1 || previousMeasure < 0) {
+      tempi.push({ ontime: beat, bpm: measure.initialBpm })
+    }
+    for (const tempo of measure.tempi) tempi.push({ ...tempo, ontime: beat + tempo.ontime })
+    for (const source of measure.notes) {
+      const note = { ...source, ontime: beat + source.ontime, offtime: beat + source.offtime }
+      const key = `${note.staffNo}:${note.voiceNo}:${note.pitch}`
+      const held = pendingTies.get(key)
+      if (note.tieStop && held && Math.abs(held.offtime - note.ontime) < 1e-8) {
+        held.offtime = note.offtime
+        held.duration = held.offtime - held.ontime
+        if (!note.tieStart) pendingTies.delete(key)
+      } else {
+        notes.push(note)
+        pendingTies.delete(key)
+        if (note.tieStart) pendingTies.set(key, note)
+      }
+    }
+    for (const rest of measure.rests) rests.push({ ...rest, ontime: beat + rest.ontime, offtime: beat + rest.offtime })
+    beat += measure.duration
+    previousMeasure = index
+  }
   return {
     name: text(doc, "work-title") || text(doc, "movement-title") || "Untitled",
-    layer, notes, rests,
-    timeSignatures, keySignatures, tempi,
-    clefChanges,
-    expressions: [],
-    sequencing,
-    pageLayout,
-    miscXML
+    layer, notes, rests, tempi, timeSignatures, keySignatures, clefChanges,
+    sequencing, durationBeats: beat, expressions: [], miscXML: { anacrusis: 0 },
+    pageLayout: { pageWidth: 1200, pageHeight: 1700, margins: { left: 70, right: 70, top: 88, bottom: 88 } }
   }
 }
 
