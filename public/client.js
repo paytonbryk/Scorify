@@ -21,7 +21,7 @@ const uploadStatus  = document.getElementById("uploadStatus")
 const scoreList     = document.getElementById("scoreList")
 const viewerSection = document.getElementById("viewerSection")
 const scoreTitle    = document.getElementById("scoreTitle")
-const scoreCanvas   = document.getElementById("scoreCanvas")
+const scoreContainer = document.getElementById("scoreContainer")
 const viewerStatus  = document.getElementById("viewerStatus")
 const analysisSection = document.getElementById("analysisSection")
 const analysisResult  = document.getElementById("analysisResult")
@@ -118,8 +118,21 @@ async function openScore(score) {
       headers: { Authorization: `Bearer ${authToken}` }
     }).then(r => r.text())
 
+    // Parse for playback
     currentComposition = parseMusicXML(xml)
-    renderScore(currentComposition)
+
+    // Render with OSMD
+    scoreContainer.innerHTML = ""
+    const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(scoreContainer, {
+      autoResize: true,
+      backend: "svg",
+      drawTitle: true,
+      drawComposer: true,
+      drawingParameters: "default"
+    })
+    await osmd.load(xml)
+    await osmd.render()
+
     setStatus(viewerStatus, "Ready. Press Play to hear it.")
   } catch (err) {
     console.error("Load error:", err.message, err.stack)
@@ -156,13 +169,17 @@ async function playScore() {
     }
   })
 
-  // Build one PolySynth per staff
+  // Build one PolySynth per staff with piano-like tone
+  const reverb = new Tone.Reverb({ decay: 1.8, wet: 0.25 }).toMaster()
   const synths = new Map()
   notes.forEach(note => {
     if (!note.pitch) return
     if (!synths.has(note.staffNo)) {
-      const synth = new Tone.PolySynth(16, Tone.Synth).toMaster()
-      synth.volume.value = -16
+      const synth = new Tone.PolySynth(16, Tone.Synth, {
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.02, decay: 0.4, sustain: 0.3, release: 1.2 }
+      }).connect(reverb)
+      synth.volume.value = -12
       synths.set(note.staffNo, synth)
     }
   })

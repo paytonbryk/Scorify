@@ -173,7 +173,8 @@ button.secondary:hover { background: #E8C57A; }
 #controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 #analyseBtn { background: #2C1810; border-color: #2C1810; }
 #analyseBtn:hover { background: #8B3A0F; border-color: #8B3A0F; }
-#scoreCanvas { display: block; width: 100%; background: #fff; border: 1px solid #E8C57A; }
+#scoreContainer { width: 100%; background: #fff; border: 1px solid #E8C57A; padding: 12px; min-height: 200px; overflow-x: auto; }
+#scoreContainer svg { width: 100%; height: auto; }
 
 /* ── Analysis ── */
 #analysisSection { margin-top: 20px; border-top: 1px solid #E8C57A; padding-top: 16px; }

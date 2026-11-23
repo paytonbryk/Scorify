@@ -6,8 +6,8 @@
   <title>{{seo.title}}</title>
   <meta name="description" content="{{seo.description}}">
   <link rel="stylesheet" href="/style.css">
-  <!-- VexFlow -->
-  <script src="/vendor/vexflow.min.js"></script>
+  <!-- OpenSheetMusicDisplay -->
+  <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.3/build/opensheetmusicdisplay.min.js"></script>
   <!-- Tone.js -->
   <script src="/vendor/Tone.11.js"></script>
   <!-- App -->
@@ -61,7 +61,7 @@
           <button id="stopBtn" type="button">■ Stop</button>
           <button id="analyseBtn" type="button">🔍 ChordGNN Analysis</button>
         </div>
-        <canvas id="scoreCanvas"></canvas>
+        <div id="scoreContainer"></div>
         <div id="analysisSection" hidden>
           <h3>Harmonic Analysis</h3>
           <div id="analysisResult"></div>
