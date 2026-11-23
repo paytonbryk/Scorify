@@ -144,7 +144,12 @@ async function openScore(score) {
 document.getElementById("playBtn").addEventListener("click", playScore)
 document.getElementById("stopBtn").addEventListener("click", stopPlayback)
 
-async function playScore() {
+// Playhead state
+let playheadRAF = null
+let playDurationBeats = 0
+let playStartBeat = 0
+
+async function playScore(fromBeat = null) {
   if (!currentComposition) return setStatus(viewerStatus, "Open a score first.", true)
   stopPlayback()
   await Tone.context.resume()
@@ -154,12 +159,10 @@ async function playScore() {
 
   const { notes, tempi } = currentComposition
 
-  // Set initial tempo
   const sortedTempi = [...tempi].sort((a, b) => a.ontime - b.ontime)
   transport.bpm.value = sortedTempi[0]?.bpm || 120
-  transport.timeSignature = 4  // internal; all ontimes are quarter-note beats
+  transport.timeSignature = 4
 
-  // Schedule tempo changes
   sortedTempi.forEach(t => {
     if (t.ontime > 0) {
       const id = transport.schedule(time => {
@@ -169,48 +172,77 @@ async function playScore() {
     }
   })
 
-  // Build one PolySynth per staff with piano-like tone (Tone 11 API)
-  const reverb = new Tone.Freeverb(0.4, 3000).toMaster()
+  // Piano-like tone: AMSynth has natural harmonic modulation
+  const reverb = new Tone.Freeverb(0.5, 2500).toMaster()
+  const vol = new Tone.Volume(-6).connect(reverb)
   const synths = new Map()
   notes.forEach(note => {
     if (!note.pitch) return
     if (!synths.has(note.staffNo)) {
       const synth = new Tone.PolySynth(16, Tone.Synth)
       synth.set({
-        oscillator: { type: "triangle" },
-        envelope: { attack: 0.02, decay: 0.5, sustain: 0.3, release: 1.0 }
+        oscillator: { type: "triangle8" },
+        envelope: { attack: 0.005, decay: 0.8, sustain: 0.1, release: 1.4 }
       })
-      synth.connect(reverb)
-      synth.volume.value = -10
+      synth.connect(vol)
       synths.set(note.staffNo, synth)
     }
   })
 
-  console.log('Playback: notes to schedule:', notes.filter(n=>n.pitch).length, 'pitched notes')
-  const startBeat = Math.min(0, ...notes.map(n => n.ontime))
+  playStartBeat = fromBeat !== null ? fromBeat : Math.min(0, ...notes.map(n => n.ontime))
+  const endBeat = Math.max(...notes.map(n => n.offtime), 0)
+  playDurationBeats = endBeat - playStartBeat
 
-  // Schedule every note using Tone.Transport.schedule()
+  // Schedule notes from playStartBeat onward
   notes.forEach(note => {
-    if (!note.pitch) return
+    if (!note.pitch || note.offtime <= playStartBeat) return
     const synth = synths.get(note.staffNo)
-    const onTick  = `${Math.round((note.ontime  - startBeat) * transport.PPQ)}i`
-    const durTick  = `${Math.round(Math.max(0.01, note.duration) * transport.PPQ)}i`
+    const noteStart = Math.max(note.ontime, playStartBeat)
+    const onTick  = `${Math.round((noteStart - playStartBeat) * transport.PPQ)}i`
+    const durTick  = `${Math.round(Math.max(0.01, note.offtime - noteStart) * transport.PPQ)}i`
     const id = transport.schedule(time => {
-      synth.triggerAttackRelease(note.pitch, durTick, time, 0.7)
+      synth.triggerAttackRelease(note.pitch, durTick, time, 0.75)
     }, onTick)
     scheduledEvents.push(id)
   })
 
-  // Schedule stop at end
-  const endBeat = Math.max(...notes.map(n => n.offtime), 0)
-  const endId = transport.schedule(() => stopPlayback(), `${Math.round((endBeat - startBeat + 0.5) * transport.PPQ)}i`)
+  const endId = transport.schedule(() => stopPlayback(), `${Math.round((endBeat - playStartBeat + 0.5) * transport.PPQ)}i`)
   scheduledEvents.push(endId)
 
   transport.start("+0.05", 0)
   setStatus(viewerStatus, "Playing…")
+  startPlayhead()
+}
+
+function startPlayhead() {
+  const bar  = document.getElementById("playheadBar")
+  const fill = document.getElementById("playheadFill")
+  const time = document.getElementById("playheadTime")
+  if (!bar) return
+  bar.style.display = "block"
+
+  function tick() {
+    const beats = transport.ticks / transport.PPQ
+    const pct = playDurationBeats > 0 ? Math.min(beats / playDurationBeats, 1) : 0
+    fill.style.width = (pct * 100) + "%"
+    const bpm = transport.bpm.value
+    const totalSec = (playDurationBeats / bpm) * 60
+    const curSec = (beats / bpm) * 60
+    time.textContent = `${fmt(curSec)} / ${fmt(totalSec)}`
+    playheadRAF = requestAnimationFrame(tick)
+  }
+  playheadRAF = requestAnimationFrame(tick)
+}
+
+function fmt(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60)
+  return `${m}:${String(s).padStart(2,"0")}`
 }
 
 function stopPlayback() {
+  if (playheadRAF) { cancelAnimationFrame(playheadRAF); playheadRAF = null }
+  const fill = document.getElementById("playheadFill")
+  if (fill) fill.style.width = "0%"
   if (transport) {
     transport.stop()
     scheduledEvents.forEach(id => transport.clear(id))
@@ -218,6 +250,19 @@ function stopPlayback() {
   }
   setStatus(viewerStatus, "")
 }
+
+// ── Seek: click on playhead bar ───────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  const bar = document.getElementById("playheadBar")
+  if (!bar) return
+  bar.addEventListener("click", e => {
+    if (!currentComposition) return
+    const rect = bar.getBoundingClientRect()
+    const pct = (e.clientX - rect.left) / rect.width
+    const seekBeat = playStartBeat + pct * playDurationBeats
+    playScore(seekBeat)
+  })
+})
 
 // ── ChordGNN analysis ─────────────────────────────────────────────────────
 document.getElementById("analyseBtn").addEventListener("click", async () => {
@@ -278,9 +323,9 @@ function parseMusicXML(xmlText) {
   const text  = (el, sel) => el?.querySelector(sel)?.textContent?.trim() || ""
   const num   = (el, sel) => parseFloat(text(el, sel)) || 0
 
-  // ── Divisions (ticks per quarter note) ───────────────────────────────
-  const divEl = doc.querySelector("divisions")
-  const divisions = divEl ? parseInt(divEl.textContent) : 1
+  // ── Divisions (ticks per quarter note) — read per-measure as it can change ──
+  // We store a default here; each measure updates it when it has a <divisions> element
+  const defaultDivisions = parseInt(doc.querySelector("divisions")?.textContent || "1")
 
   // ── Time signatures ───────────────────────────────────────────────────
   const timeSignatures = [...doc.querySelectorAll("time")].map((ts, i) => ({
@@ -330,14 +375,18 @@ function parseMusicXML(xmlText) {
     let beatCursor = 0  // quarter-note beats from start of piece
 
     // Array.from + .forEach uses JS array functions as required
+    let currentDivisions = defaultDivisions
     Array.from(part.querySelectorAll("measure")).forEach(measure => {
+      // Update divisions if this measure redefines it
+      const divEl = measure.querySelector("attributes > divisions")
+      if (divEl) currentDivisions = parseInt(divEl.textContent) || currentDivisions
       let measureCursor = beatCursor
 
       Array.from(measure.querySelectorAll("note")).forEach(note => {
         const isChord    = !!note.querySelector("chord")
         const isRest     = !!note.querySelector("rest")
         const durationTicks = num(note, "duration")
-        const durationBeats = durationTicks / divisions
+        const durationBeats = durationTicks / currentDivisions
         const voiceNo    = parseInt(text(note, "voice")) || 1
 
         const ontime  = isChord ? measureCursor - durationBeats : measureCursor

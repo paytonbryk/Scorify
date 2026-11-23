@@ -217,3 +217,31 @@ h2 {
   color: #C4701A;
   margin: 0 0 12px;
 }
+
+/* ── Playhead bar ── */
+#playheadBar {
+  display: none;
+  position: relative;
+  height: 6px;
+  background: #E8C57A;
+  margin-bottom: 12px;
+  cursor: pointer;
+  border-radius: 0;
+}
+#playheadBar:hover { background: #d4b060; }
+#playheadFill {
+  height: 100%;
+  width: 0%;
+  background: #8B3A0F;
+  transition: width 0.1s linear;
+  pointer-events: none;
+}
+#playheadTime {
+  position: absolute;
+  right: 0;
+  top: -18px;
+  font-size: 11px;
+  font-family: 'Roboto Mono', monospace;
+  color: #8B3A0F;
+  letter-spacing: 0.5px;
+}
