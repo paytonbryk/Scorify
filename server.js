@@ -9,7 +9,7 @@ const fastify = require("fastify")({ logger: false })
 const nodemailer = require("nodemailer")
 
 const publicUrl = process.env.PUBLIC_URL || process.env.RENDER_EXTERNAL_URL || "http://localhost:3000"
-const dataRoot = process.env.DATA_ROOT || (process.env.RENDER ? "/mount" : path.join(__dirname, "data"))
+const dataRoot = process.env.DATA_ROOT || path.join(__dirname, "data")
 const sessionsFile = path.join(dataRoot, "user_sessions.json")
 const jobsFile = path.join(dataRoot, "jobs.json")
 const sessionLength = 30 * 60 * 1000
