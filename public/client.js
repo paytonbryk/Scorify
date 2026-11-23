@@ -298,6 +298,13 @@ function parseMusicXML(xmlText) {
   const notes = []
   const rests = []
 
+  // Transposition map: concert pitch correction per part index
+  const transposeMap = {}
+  doc.querySelectorAll("part").forEach((part, i) => {
+    const trans = part.querySelector("transpose")
+    transposeMap[i] = trans ? -(parseInt(trans.querySelector("chromatic")?.textContent || "0")) : 0
+  })
+
   doc.querySelectorAll("part").forEach((part, partIndex) => {
     const staffNo = partIndex + 1
     let beatCursor = 0  // quarter-note beats from start of piece
