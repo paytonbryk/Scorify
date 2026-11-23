@@ -428,17 +428,15 @@ function renderScore(composition) {
   const vfNotes = firstMeasureEvents.map(evt => {
     const dur = durationTypeToVF(evt.durationType)
     const dots = evt.dotCount || 0
-    // Build dot suffix for VexFlow: "q" → "qd" (one dot), "qdd" (two)
-    const dotSuffix = "d".repeat(dots)
     let vfNote
     if (evt.pitch) {
-      vfNote = new VF.StaveNote({ clef: "treble", keys: [pitchToVFKey(evt.pitch)], duration: dur + dotSuffix })
+      vfNote = new VF.StaveNote({ clef: "treble", keys: [pitchToVFKey(evt.pitch)], duration: dur })
     } else {
-      vfNote = new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: dur + dotSuffix + "r" })
+      vfNote = new VF.StaveNote({ clef: "treble", keys: ["b/4"], duration: dur + "r" })
     }
-    // Add dot modifiers explicitly
+    // Add dot modifiers — in VexFlow 1.x dots are modifiers only, NOT part of duration string
     for (let d = 0; d < dots; d++) {
-      vfNote.addDotToAll ? vfNote.addDotToAll() : vfNote.addModifier(new VF.Dot(), 0)
+      if (vfNote.addDotToAll) vfNote.addDotToAll()
     }
     return vfNote
   })
@@ -449,6 +447,7 @@ function renderScore(composition) {
   }
 
   console.log("VexFlow: rendering", vfNotes.length, "notes/rests in first measure")
+  console.log("VexFlow events:", firstMeasureEvents.map(e => e.durationType+(e.dotCount?"(dot)":"")+" @"+e.ontime+" "+(e.pitch||"rest")))
 
   try {
     const numBeats = ts ? ts.topNo : 4
