@@ -192,8 +192,9 @@ async function playScore(fromBeat = null) {
     }
   })
 
-  playStartBeat = fromBeat !== null ? fromBeat : Math.min(0, ...notes.map(n => n.ontime))
-  const endBeat = Math.max(...notes.map(n => n.offtime), 0)
+  const validNotes = notes.filter(n => !isNaN(n.ontime) && !isNaN(n.offtime))
+  playStartBeat = fromBeat !== null ? fromBeat : Math.min(0, ...validNotes.map(n => n.ontime))
+  const endBeat = Math.max(...validNotes.map(n => n.offtime), 0)
   playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
@@ -214,7 +215,8 @@ async function playScore(fromBeat = null) {
     scheduledEvents.push(id)
   })
 
-  const endId = transport.schedule(() => stopPlayback(), `${Math.round((endBeat - playStartBeat + 0.5) * transport.PPQ)}i`)
+  const endTickVal = Math.round((endBeat - playStartBeat + 0.5) * transport.PPQ)
+  const endId = transport.schedule(() => stopPlayback(), `${isNaN(endTickVal) ? 0 : endTickVal}i`)
   scheduledEvents.push(endId)
 
   transport.start("+0.05", 0)
