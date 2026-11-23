@@ -5,7 +5,7 @@
    ============================================================ */
 
 // ── State ─────────────────────────────────────────────────────────────────
-let authToken = sessionStorage.getItem("scorify_token") || null
+let authToken = localStorage.getItem("scorify_token") || null
 let currentComposition = null   // parsed Composition object
 let transport = null            // Tone.Transport handle
 let scheduledEvents = []        // Tone event IDs for cleanup
@@ -36,7 +36,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     const res = await apiFetch("/api/auth", "POST", { magicLink: mlk })
     if (res.authToken) {
       authToken = res.authToken
-      sessionStorage.setItem("scorify_token", authToken)
+      localStorage.setItem("scorify_token", authToken)
     } else {
       setStatus(authStatus, res.error || "Link invalid.", true)
     }
@@ -54,7 +54,7 @@ emailForm.addEventListener("submit", async e => {
 
 document.getElementById("signOutBtn").addEventListener("click", () => {
   authToken = null
-  sessionStorage.removeItem("scorify_token")
+  localStorage.removeItem("scorify_token")
   appSection.hidden = true
   authSection.hidden = false
 })
@@ -83,8 +83,15 @@ async function loadScoreList() {
   scoreList.innerHTML = ""
   scores.forEach(score => {
     const li = document.createElement("li")
-    li.innerHTML = `<span class="score-name">${esc(score.name)}</span>`
-    li.addEventListener("click", () => openScore(score))
+    li.innerHTML = `<span class="score-name">${esc(score.name)}</span><button class="deleteBtn" title="Delete">✕</button>`
+    li.querySelector(".score-name").addEventListener("click", () => openScore(score))
+    li.querySelector(".deleteBtn").addEventListener("click", async e => {
+      e.stopPropagation()
+      if (!confirm(`Delete "${score.name}"?`)) return
+      const res = await apiFetch(`/api/score/${score.filename}`, "DELETE")
+      if (res.error) return alert(res.error)
+      loadScoreList()
+    })
     scoreList.appendChild(li)
   })
 }
@@ -327,7 +334,12 @@ function parseMusicXML(xmlText) {
           const octave  = text(note, "octave")
           const alter   = num(note, "alter")  // -1=flat, 0=natural, 1=sharp
           const accidental = alter === 1 ? "#" : alter === -1 ? "b" : ""
-          const pitch   = step && octave ? `${step}${accidental}${octave}` : null
+          const rawPitch = step && octave ? `${step}${accidental}${octave}` : null
+          // Transpose to concert pitch if instrument is transposing
+          const semitoneShift = transposeMap[partIndex] || 0
+          const pitch = rawPitch && semitoneShift !== 0
+            ? transposePitch(rawPitch, semitoneShift)
+            : rawPitch
 
           notes.push({
             ontime, offtime, duration: durationBeats,
@@ -446,6 +458,26 @@ function renderScore(composition) {
 }
 
 // ── VexFlow helpers ───────────────────────────────────────────────────────
+
+// Transpose a pitch string like "C#4" by n semitones (positive = up)
+function transposePitch(pitch, semitones) {
+  const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
+  const m = pitch.match(/^([A-G]#?)(\d+)$/)
+  if (!m) return pitch
+  let idx = notes.indexOf(m[1])
+  if (idx === -1) {
+    // Handle flats: Bb->A#, Eb->D#, Ab->G#, Db->C#, Gb->F#
+    const flatMap = { "Bb":"A#","Eb":"D#","Ab":"G#","Db":"C#","Gb":"F#","Cb":"B","Fb":"E" }
+    idx = notes.indexOf(flatMap[m[1]] || m[1])
+    if (idx === -1) return pitch
+  }
+  let oct = parseInt(m[2])
+  let newIdx = idx + semitones
+  while (newIdx < 0)  { newIdx += 12; oct-- }
+  while (newIdx >= 12){ newIdx -= 12; oct++ }
+  return notes[newIdx] + oct
+}
+
 function pitchToVFKey(pitch) {
   // "C#4" → "c#/4", "Bb3" → "bb/3"
   const m = pitch.match(/^([A-G])(#|b)?(\d+)$/)

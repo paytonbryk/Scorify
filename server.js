@@ -170,6 +170,22 @@ fastify.get("/api/score/:userId/:filename", async (req, rep) => {
   return rep.send(fs.createReadStream(filepath))
 })
 
+// ── Delete a score ─────────────────────────────────────────────────────────
+fastify.delete("/api/score/:filename", async (req, rep) => {
+  const user = authenticateUser(req)
+  if (!user) return rep.code(401).send({ error: "Please sign in." })
+  const { filename } = req.params
+  if (!/^[0-9a-f-]{36}\.(xml|musicxml)$/.test(filename))
+    return rep.code(400).send({ error: "Invalid filename." })
+  const filepath = path.join(accountFolder(user.uuid), "uploads", filename)
+  if (!fs.existsSync(filepath)) return rep.code(404).send({ error: "Not found." })
+  await fs.promises.unlink(filepath)
+  const account = readAccount(user.uuid)
+  account.uploads = account.uploads.filter(f => f.filename !== filename)
+  saveAccount(account)
+  return { success: true }
+})
+
 // ── Job queue (UI-side) ──────────────────────────────────────────────────────
 // The 2nd server polls /api/jobs and pings /api/jobComplete when done.
 
