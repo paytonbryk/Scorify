@@ -129,17 +129,17 @@ button.secondary:hover { background: #E8C57A; }
 #uploadSection input[type="file"] { font-size: 12px; color: #2C1810; }
 
 /* ── Score list ── */
-#scoreList { list-style: none; background: #fff; border: 1px solid #E8C57A; margin-bottom: 24px; }
-#scoreList li {
+#demoList, #scoreList { list-style: none; background: #fff; border: 1px solid #E8C57A; margin-bottom: 24px; }
+#demoList li, #scoreList li {
   display: flex;
   align-items: center;
   padding: 10px 14px;
   border-bottom: 1px solid #F5EDD8;
   gap: 10px;
 }
-#scoreList li:last-child { border-bottom: none; }
-#scoreList li:hover { background: #FDF6E8; }
-#scoreList li.active { background: #E8C57A; }
+#demoList li:last-child, #scoreList li:last-child { border-bottom: none; }
+#demoList li:hover, #scoreList li:hover { background: #FDF6E8; }
+#demoList li.active, #scoreList li.active { background: #E8C57A; }
 .score-name {
   flex: 1;
   cursor: pointer;

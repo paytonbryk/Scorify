@@ -121,7 +121,7 @@ async function loadDemoScore(path, name) {
   setStatus(viewerStatus, "Loading…")
 
   document.querySelectorAll(".demo-score").forEach(el => {
-    el.classList.toggle("active", el.dataset.path === path)
+    el.closest("li").classList.toggle("active", el.dataset.path === path)
   })
 
   try {
