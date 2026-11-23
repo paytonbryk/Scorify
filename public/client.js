@@ -193,11 +193,12 @@ async function playScore(fromBeat = null) {
   })
 
   const validNotes = notes.filter(n => !isNaN(n.ontime) && !isNaN(n.offtime))
-  playStartBeat = fromBeat !== null ? fromBeat : Math.min(0, ...validNotes.map(n => n.ontime))
-  const endBeat = Math.max(...validNotes.map(n => n.offtime), 0)
+  playStartBeat = fromBeat !== null ? fromBeat : validNotes.reduce((m, n) => Math.min(m, n.ontime), 0)
+  const endBeat = validNotes.reduce((m, n) => Math.max(m, n.offtime), 0)
   playDurationBeats = endBeat - playStartBeat
 
   // Schedule notes from playStartBeat onward
+  const bpm = transport.bpm.value || 120
   notes.forEach(note => {
     if (!note.pitch || note.offtime <= playStartBeat) return
     if (isNaN(note.ontime) || isNaN(note.offtime)) return
@@ -205,12 +206,12 @@ async function playScore(fromBeat = null) {
     if (!synth) return
     const noteStart = Math.max(note.ontime, playStartBeat)
     const onTickVal  = Math.round((noteStart - playStartBeat) * transport.PPQ)
-    const durTickVal = Math.round(Math.max(0.01, note.offtime - noteStart) * transport.PPQ)
-    if (isNaN(onTickVal) || isNaN(durTickVal)) return
+    // Duration must be in seconds inside a Transport callback, not ticks
+    const durSecs = Math.max(0.05, (note.offtime - noteStart) * 60 / bpm)
+    if (isNaN(onTickVal) || isNaN(durSecs)) return
     const onTick  = `${onTickVal}i`
-    const durTick = `${durTickVal}i`
     const id = transport.schedule(time => {
-      synth.triggerAttackRelease(note.pitch, durTick, time, 0.75)
+      synth.triggerAttackRelease(note.pitch, durSecs, time, 0.75)
     }, onTick)
     scheduledEvents.push(id)
   })
